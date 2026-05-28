@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>4K Screenshot Studio</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self';">
   <style>
@@ -25,15 +26,246 @@
     /* Floating Top Toolbar */
     .top-toolbar {
       position: absolute; top: 24px; left: calc(340px + (100% - 340px) / 2); transform: translateX(-50%);
-      background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; border-radius: 12px;
-      display: flex; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 10; align-items: center;
+      background: var(--bg); border: 1px solid var(--border); padding: 8px 16px; border-radius: 14px;
+      display: flex; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); z-index: 10; align-items: center;
     }
     .tool-btn {
-      background: transparent; border: none; color: var(--text-muted); padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+      background: transparent; border: none; color: var(--text-muted); padding: 6px 8px; border-radius: 8px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: all 0.1s;
+      min-width: 42px;
+      outline: none;
+    }
+    .tool-btn:focus, .tool-btn:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
     }
     .tool-btn:hover { background: var(--panel-bg); color: var(--text); }
-    .tool-btn.active { background: #f0f0f0; color: var(--accent); }
+    .tool-btn.active { background: #000000; color: #ffffff; }
+    .tool-badge {
+      font-size: 8px;
+      font-weight: 700;
+      color: #888888;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5px 4px;
+      line-height: 1;
+      pointer-events: none;
+      display: inline-block;
+    }
+    .tool-btn.active .tool-badge {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+    }
     .color-picker { width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; margin-left: 8px; }
+
+    /* Showcase 3D Presets Grid */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .showcase-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 94px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      outline: none;
+    }
+    
+    .showcase-btn:hover {
+      border-color: var(--text-muted);
+      background: var(--panel-bg);
+    }
+    
+    .showcase-btn.active {
+      border-color: #000000;
+      background: #fafafa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    
+    .showcase-btn .preview-area {
+      flex: 1;
+      width: 100%;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 120px;
+      margin-bottom: 6px;
+      pointer-events: none;
+    }
+    
+    /* The mini screen inside the card */
+    .mini-screen {
+      width: 42px;
+      height: 28px;
+      background: #ffffff;
+      border: 1px solid #d4d4d4;
+      border-radius: 3px;
+      position: relative;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.25s;
+      transform-style: preserve-3d;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5px;
+      gap: 1px;
+      pointer-events: none;
+    }
+    
+    .showcase-btn.active .mini-screen {
+      border-color: #000000;
+    }
+    
+    /* Fake screen content elements */
+    .mini-screen-bar { height: 2px; width: 100%; background: #eaeaea; border-radius: 0.5px; pointer-events: none; }
+    .mini-screen-body { flex: 1; display: flex; flex-direction: column; gap: 1px; justify-content: center; pointer-events: none; }
+    .mini-screen-line { height: 1.5px; background: #f3f3f3; width: 80%; border-radius: 0.5px; pointer-events: none; }
+    .mini-screen-line.short { width: 50%; pointer-events: none; }
+    .mini-screen-hero { height: 6px; background: #f0f0f0; border-radius: 0.5px; width: 100%; pointer-events: none; }
+
+    /* Custom styles for each preset */
+    .preview-flat .mini-screen { transform: none; }
+    
+    .preview-elevate .mini-screen { 
+      transform: translate3d(0, -3px, 0); 
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+    }
+    
+    .preview-iso-left .mini-screen { 
+      transform: rotateX(50deg) rotateZ(-40deg) scale(0.9);
+      box-shadow: -2px 3px 5px rgba(0,0,0,0.12);
+    }
+    
+    .preview-iso-right .mini-screen { 
+      transform: rotateX(50deg) rotateZ(40deg) scale(0.9);
+      box-shadow: 2px 3px 5px rgba(0,0,0,0.12);
+    }
+    
+    .preview-iso-top .mini-screen { 
+      transform: rotateX(55deg) rotateZ(-45deg) scale(0.8);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .preview-stand-left .mini-screen { 
+      transform: rotateY(-25deg) scale(0.9);
+      box-shadow: -2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .preview-stand-right .mini-screen { 
+      transform: rotateY(25deg) scale(0.9);
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Stacked screen variants */
+    .mini-screen-stack {
+      position: absolute;
+      width: 32px;
+      height: 22px;
+      background: #ffffff;
+      border: 1px solid #d4d4d4;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      transition: all 0.25s;
+      pointer-events: none;
+    }
+    
+    .showcase-btn.active .mini-screen-stack {
+      border-color: #000000;
+    }
+    
+    .preview-stack-flat-br .mini-screen-stack:first-child { transform: translate(-4px, -4px); z-index: 1; }
+    .preview-stack-flat-br .mini-screen-stack:last-child { transform: translate(4px, 4px); z-index: 2; background: #fafafa; }
+    
+    .preview-stack-flat-bl .mini-screen-stack:first-child { transform: translate(4px, -4px); z-index: 1; }
+    .preview-stack-flat-bl .mini-screen-stack:last-child { transform: translate(-4px, 4px); z-index: 2; background: #fafafa; }
+
+    .preview-stack-flat-tr .mini-screen-stack:first-child { transform: translate(-4px, 4px); z-index: 1; }
+    .preview-stack-flat-tr .mini-screen-stack:last-child { transform: translate(4px, -4px); z-index: 2; background: #fafafa; }
+    
+    .preview-stack-flat-tl .mini-screen-stack:first-child { transform: translate(4px, 4px); z-index: 1; }
+    .preview-stack-flat-tl .mini-screen-stack:last-child { transform: translate(-4px, -4px); z-index: 2; background: #fafafa; }
+
+    .preview-stack-iso-left { perspective: 120px; }
+    .preview-stack-iso-left .mini-screen-stack:first-child { 
+      transform: rotateX(50deg) rotateZ(-40deg) translate3d(-6px, -6px, 0) scale(0.8); 
+      z-index: 1; 
+    }
+    .preview-stack-iso-left .mini-screen-stack:last-child { 
+      transform: rotateX(50deg) rotateZ(-40deg) translate3d(2px, 2px, 0) scale(0.8); 
+      z-index: 2; 
+      background: #fafafa; 
+    }
+    
+    .preview-stack-stand { perspective: 120px; }
+    .preview-stack-stand .mini-screen-stack:first-child {
+      transform: rotateY(-20deg) translate3d(-6px, 0, 0) scale(0.85);
+      z-index: 1;
+    }
+    .preview-stack-stand .mini-screen-stack:last-child {
+      transform: rotateY(-20deg) translate3d(2px, 0, 5px) scale(0.85);
+      z-index: 2;
+      background: #fafafa;
+    }
+
+    .preview-mobile .mini-screen {
+      width: 20px;
+      height: 36px;
+      border-radius: 4px;
+    }
+
+    .preview-fan-3d .mini-screen-stack {
+      width: 22px;
+      height: 30px;
+    }
+    .preview-fan-3d .mini-screen-stack:nth-child(1) { transform: rotateY(-30deg) translate3d(-10px, 0, 0) scale(0.85); z-index: 1; }
+    .preview-fan-3d .mini-screen-stack:nth-child(2) { transform: translate3d(0, 0, 2px) scale(0.85); z-index: 2; }
+    .preview-fan-3d .mini-screen-stack:nth-child(3) { transform: rotateY(30deg) translate3d(10px, 0, 0) scale(0.85); z-index: 3; }
+
+    .preview-reflect-3d .mini-screen {
+      transform: rotateX(40deg) scale(0.9);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Custom 3D Sliders Icon */
+    .preview-custom .mini-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+    }
+    .preview-custom .custom-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    
+    .showcase-btn .label-text {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.1s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    
+    .showcase-btn.active .label-text {
+      color: #000000;
+    }
 
     /* Left Sidebar */
     .sidebar { width: 340px; height: 100%; background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 1px 0 10px rgba(0,0,0,0.02); }
@@ -49,7 +281,29 @@
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: #fff; border-radius: 50%; border: 2px solid var(--accent); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .select-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 13px; background: var(--bg); color: var(--text); outline: none; cursor: pointer; }
 
-    .bg-presets { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    .bg-presets {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      max-height: 172px;
+      overflow-y: auto;
+      padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.1) transparent;
+    }
+    .bg-presets::-webkit-scrollbar {
+      width: 4px;
+    }
+    .bg-presets::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .bg-presets::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+    }
+    .bg-presets::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
     .bg-preset { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); transition: transform 0.1s; background-size: cover; background-position: center; }
     .bg-preset.active { border: 2px solid var(--accent); transform: scale(1.1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
@@ -62,8 +316,10 @@
     .segment-btn.active { background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .btn-icon-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
 
-    .export-btn { margin: 24px; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: opacity 0.2s; }
+    .export-btn { margin: 0; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: opacity 0.2s; }
     .export-btn:hover { opacity: 0.85; }
+    .copy-btn { margin: 0; padding: 14px; background: #ffffff; color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .copy-btn:hover { background: var(--hover); }
 
     /* Main Area - Figma Style Canvas */
     .main-area { flex: 1; position: relative; background: #e5e5e5; background-image: var(--checkerboard); overflow: hidden; cursor: grab; }
@@ -90,7 +346,23 @@
     .zoom-controls span { font-size: 12px; font-weight: 500; min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; }
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 5px; border: 2px solid var(--bg); }
+    /* Floating Export Action Bar */
+    .export-floating-bar {
+      position: absolute; top: 24px; right: 24px;
+      background: var(--bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 14px;
+      display: flex; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); z-index: 50; align-items: center;
+    }
+    .export-select-compact {
+      font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-bg); color: var(--text); outline: none; cursor: pointer; height: 34px;
+    }
+    .export-btn-compact {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 0 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; gap: 6px; height: 34px;
+    }
+    .export-btn-compact:hover { opacity: 0.85; }
+    .copy-btn-compact {
+      background: #ffffff; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px; height: 34px;
+    }
+    .copy-btn-compact:hover { background: var(--panel-bg); }
   </style>
 </head>
 <body>
@@ -116,26 +388,260 @@
         </select>
       </div>
 
+      <!-- Window Viewport Settings -->
+      <div class="control-group">
+        <div class="control-label">Window Viewport</div>
+        <div class="segmented" id="param-viewportHeightMode" style="display: flex;">
+          <button class="segment-btn active" data-value="auto">Auto Height</button>
+          <button class="segment-btn" data-value="custom">Custom Height</button>
+        </div>
+        
+        <div id="viewport-custom-settings" style="display: none; flex-direction: column; gap: 14px; border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: var(--panel-bg); margin-top: 4px;">
+          <div class="control-group">
+            <div class="control-label">
+              <span>Viewport Height</span>
+              <span class="control-value" id="val-customViewportHeight">800px</span>
+            </div>
+            <input type="range" id="param-customViewportHeight" min="300" max="2000" step="50" value="800">
+          </div>
+          
+          <div class="control-group">
+            <div class="control-label">
+              <span>Webpage Scroll</span>
+              <span class="control-value" id="val-webpageScrollOffset">0%</span>
+            </div>
+            <input type="range" id="param-webpageScrollOffset" min="0" max="100" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
       <!-- 3D Transform -->
       <div class="control-group">
         <div class="control-label">Showcase Display</div>
-        <div class="segmented" id="transform-toggle" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
-          <button class="segment-btn active" data-value="flat">Standard</button>
-          <button class="segment-btn" data-value="elevate">Elevate</button>
-          <button class="segment-btn" data-value="iso-left">Iso Lay</button>
-          <button class="segment-btn" data-value="iso-right">Iso Right</button>
-          <button class="segment-btn" data-value="stand-left">Stand</button>
-          <button class="segment-btn" data-value="stand-right">Stand R</button>
-          <button class="segment-btn" data-value="stack-flat-br">Stack BR</button>
-          <button class="segment-btn" data-value="stack-flat-bl">Stack BL</button>
-          <button class="segment-btn" data-value="stack-flat-tr">Stack TR</button>
-          <button class="segment-btn" data-value="stack-flat-tl">Stack TL</button>
-          <button class="segment-btn" data-value="stack-iso-left">Stack Iso</button>
-          <button class="segment-btn" data-value="stack-stand">Mobile</button>
-          <button class="segment-btn" data-value="fan-3d">Fan Fold</button>
-          <button class="segment-btn" data-value="iso-top">Diamond</button>
-          <button class="segment-btn" data-value="reflect-3d">Glass Floor</button>
+        <div class="showcase-grid" id="transform-toggle">
+          
+          <!-- Standard -->
+          <button class="showcase-btn active preview-flat" data-value="flat">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Standard</span>
+          </button>
+          
+          <!-- Elevate -->
+          <button class="showcase-btn preview-elevate" data-value="elevate">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Elevate</span>
+          </button>
+          
+          <!-- Iso Lay -->
+          <button class="showcase-btn preview-iso-left" data-value="iso-left">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Iso Lay</span>
+          </button>
+          
+          <!-- Iso Right -->
+          <button class="showcase-btn preview-iso-right" data-value="iso-right">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Iso Right</span>
+          </button>
+          
+          <!-- Stand -->
+          <button class="showcase-btn preview-stand-left" data-value="stand-left">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Stand</span>
+          </button>
+          
+          <!-- Stand R -->
+          <button class="showcase-btn preview-stand-right" data-value="stand-right">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Stand R</span>
+          </button>
+          
+          <!-- Stack BR -->
+          <button class="showcase-btn preview-stack-flat-br" data-value="stack-flat-br">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Stack BR</span>
+          </button>
+          
+          <!-- Stack BL -->
+          <button class="showcase-btn preview-stack-flat-bl" data-value="stack-flat-bl">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Stack BL</span>
+          </button>
+          
+          <!-- Stack TR -->
+          <button class="showcase-btn preview-stack-flat-tr" data-value="stack-flat-tr">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Stack TR</span>
+          </button>
+          
+          <!-- Stack TL -->
+          <button class="showcase-btn preview-stack-flat-tl" data-value="stack-flat-tl">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Stack TL</span>
+          </button>
+          
+          <!-- Stack Iso -->
+          <button class="showcase-btn preview-stack-iso-left" data-value="stack-iso-left">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Stack Iso</span>
+          </button>
+          
+          <!-- Mobile (stack-stand in canvas context) -->
+          <button class="showcase-btn preview-stack-stand" data-value="stack-stand">
+            <div class="preview-area">
+              <div class="mini-screen-stack" style="width:14px; height:24px; border-radius: 2px;"></div>
+              <div class="mini-screen-stack" style="width:14px; height:24px; border-radius: 2px;"></div>
+            </div>
+            <span class="label-text">Mobile Stack</span>
+          </button>
+          
+          <!-- Fan Fold -->
+          <button class="showcase-btn preview-fan-3d" data-value="fan-3d">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+            <span class="label-text">Fan Fold</span>
+          </button>
+          
+          <!-- Diamond -->
+          <button class="showcase-btn preview-iso-top" data-value="iso-top">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Diamond</span>
+          </button>
+          
+          <!-- Glass Floor -->
+          <button class="showcase-btn preview-reflect-3d" data-value="reflect-3d">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+            <span class="label-text">Glass Floor</span>
+          </button>
+          
+          <!-- Custom 3D -->
+          <button class="showcase-btn preview-custom" data-value="custom">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <svg class="custom-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+              </div>
+            </div>
+            <span class="label-text">Custom 3D</span>
+          </button>
+          
         </div>
+      </div>
+
+      <!-- Custom 3D & Premium Effects Panel -->
+      <div id="custom-3d-container" style="display:none; flex-direction:column; gap:14px; border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: var(--panel-bg);">
+        <div class="control-label" style="font-size:12px; font-weight:600; margin-bottom:4px;">Custom 3D & Effects</div>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Rotation</span>
+            <span class="control-value" id="val-customRotate">0°</span>
+          </div>
+          <input type="range" id="param-customRotate" min="-180" max="180" value="0">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Skew X</span>
+            <span class="control-value" id="val-customSkewX">0°</span>
+          </div>
+          <input type="range" id="param-customSkewX" min="-60" max="60" value="0">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Skew Y</span>
+            <span class="control-value" id="val-customSkewY">0°</span>
+          </div>
+          <input type="range" id="param-customSkewY" min="-60" max="60" value="0">
+        </div>
+
+
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>3D Extrusion Depth</span>
+            <span class="control-value" id="val-customDepth">0px</span>
+          </div>
+          <input type="range" id="param-customDepth" min="0" max="50" value="0">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Depth Direction</span>
+            <span class="control-value" id="val-customDepthAngle">135°</span>
+          </div>
+          <input type="range" id="param-customDepthAngle" min="0" max="360" value="135">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Gloss Reflection</span>
+            <span class="control-value" id="val-customGloss">0%</span>
+          </div>
+          <input type="range" id="param-customGloss" min="0" max="100" value="0">
+        </div>
+
+        <button id="btn-reset-custom-3d" style="margin-top: 8px; padding: 10px; font-size: 12px; border-radius: 6px; width: 100%; background: #ffffff; color: var(--text); border: 1px solid var(--border); font-family: inherit; font-weight: 500; cursor: pointer; transition: background 0.15s;">
+          Reset Custom 3D
+        </button>
       </div>
 
       <!-- Background Selection -->
@@ -145,10 +651,33 @@
           <option value="gradients">Premium Gradients</option>
           <option value="solid">Solid Colors</option>
           <option value="patterns">Modern Patterns</option>
+          <option value="custom-gradient">Custom Gradient</option>
           <option value="image">Custom Image Upload</option>
         </select>
         
         <div class="bg-presets" id="bg-presets"></div>
+
+        <div id="custom-gradient-container" style="display:none; margin-top:4px; flex-direction:column; gap:10px; border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: var(--panel-bg);">
+          <div class="control-label" style="font-size:11px; font-weight:600; margin-bottom:2px;">Custom Gradient Builder</div>
+          <div class="segmented" id="bg-custom-grad-type" style="margin-bottom:2px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
+            <button class="segment-btn active" data-value="linear">Linear</button>
+            <button class="segment-btn" data-value="radial">Radial</button>
+          </div>
+          
+          <div id="bg-custom-grad-angle-group">
+            <div class="control-label" style="font-size:11px; margin-bottom:4px;">
+              <span>Angle</span>
+              <span class="control-value" id="val-bgGradAngle">135°</span>
+            </div>
+            <input type="range" id="param-bgGradAngle" min="0" max="360" value="135" style="margin-bottom:8px;">
+          </div>
+          
+          <div class="control-label" style="font-size:11px; margin-bottom:4px;">Color Stops</div>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+            <input type="color" id="bg-custom-grad-color1" class="color-picker" style="flex:1; height:38px; margin:0; padding:2px;" value="#ff3366">
+            <input type="color" id="bg-custom-grad-color2" class="color-picker" style="flex:1; height:38px; margin:0; padding:2px;" value="#ffcc00">
+          </div>
+        </div>
 
         <div id="solid-color-container" style="display:none; margin-top:4px;">
           <div class="control-label" style="font-size:11px; margin-bottom:6px;">Custom Solid Color</div>
@@ -174,6 +703,7 @@
           <button class="segment-btn" data-value="minimal">Minimal</button>
         </div>
       </div>
+
 
       <div class="control-group">
         <div class="control-label">
@@ -223,8 +753,29 @@
         <input type="range" id="param-shadow" min="0" max="100" value="40">
       </div>
 
+
+
       <div id="text-engine-panel" style="border-top:1px solid var(--border); padding-top:24px; display:flex; flex-direction:column; gap:20px;">
         <div class="control-label" style="font-size:14px; font-weight:600;">Text Styling</div>
+
+        <div class="control-group">
+          <div class="control-label">Font Family</div>
+          <select id="param-text-font" class="select-input">
+            <option value="'Geist', sans-serif" style="font-family: 'Geist', sans-serif">Geist (Modern)</option>
+            <option value="'Montserrat', sans-serif" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
+            <option value="'Nunito', sans-serif" style="font-family: 'Nunito', sans-serif">Nunito (Rounded)</option>
+            <option value="'Lato', sans-serif" style="font-family: 'Lato', sans-serif">Lato</option>
+            <option value="'Oswald', sans-serif" style="font-family: 'Oswald', sans-serif">Oswald (Bold)</option>
+            <option value="'Cinzel', serif" style="font-family: 'Cinzel', serif">Cinzel (Classic)</option>
+            <option value="'Audiowide', cursive" style="font-family: 'Audiowide', cursive">Audiowide</option>
+            <option value="'Birthstone', cursive" style="font-family: 'Birthstone', cursive">Birthstone (Script)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">Text Content</div>
+          <textarea id="param-text-content" class="select-input" style="height: 60px; resize: none; font-family: inherit; font-size: 13px;" placeholder="Text content..."></textarea>
+        </div>
 
         <div class="control-group">
           <div class="control-label">
@@ -279,51 +830,109 @@
             <button class="segment-btn" data-value="on" style="font-size: 10px;">Depth</button>
           </div>
         </div>
-
-        <button id="btn-delete-text" class="upload-btn" style="color: #ef4444; border-color: #fca5a5; background: #fff1f2; margin-top: 10px;">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-          Delete Selected Text
-        </button>
       </div>
-    </div>
 
-    <button class="export-btn" id="btn-export">Export HD Image</button>
+
+    </div>
   </div>
 
   <div class="top-toolbar">
-    <button id="tool-pan" class="tool-btn active" title="Pan"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v5.5m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v5.5"></path></svg></button>
-    <button id="tool-draw" class="tool-btn" title="Pen"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-    <button id="tool-rect" class="tool-btn" title="Rectangle"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16v12H4z"></path></svg></button>
-    <button id="tool-arrow" class="tool-btn" title="Arrow"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button>
-    <button id="tool-text" class="tool-btn" title="Select/Drag Text"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg></button>
-    <div class="divider-y"></div>
+    <button id="tool-select" class="tool-btn" title="Select Tool (1)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path></svg><span class="tool-badge">1</span></button>
+    <button id="tool-pan" class="tool-btn active" title="Pan Tool (2)"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v5.5m0-5.5a1.5 1.5 0 013 0v5.5m0-5.5a1.5 1.5 0 013 0v5.5"></path></svg><span class="tool-badge">2</span></button>
+    <button id="tool-draw" class="tool-btn" title="Pen Tool (3)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg><span class="tool-badge">3</span></button>
+    <button id="tool-highlight" class="tool-btn" title="Highlighter (4)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.243 4.828a1 1 0 00-1.414 0L3.828 14.828A1 1 0 003.5 15.5V20a1 1 0 001 1h4.5a1 1 0 00.7-.3l10-10a1 1 0 000-1.415l-4.956-4.957zM3 21h18"></path></svg><span class="tool-badge">4</span></button>
+    <button id="tool-blur" class="tool-btn" title="Blur / Redact (5)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z"></path></svg><span class="tool-badge">5</span></button>
+    <button id="tool-rect" class="tool-btn" title="Rectangle Shape (6)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16v12H4z"></path></svg><span class="tool-badge">6</span></button>
+    <button id="tool-arrow" class="tool-btn" title="Arrow Shape (7)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg><span class="tool-badge">7</span></button>
     
-    <input type="text" id="param-text-content" class="select-input" style="width: 140px; height: 32px;" placeholder="Text content...">
-    <select id="param-text-font" class="select-input" style="width: 140px; height: 32px; padding: 4px 8px;">
-      <option value="'Geist', sans-serif" style="font-family: 'Geist', sans-serif">Geist (Modern)</option>
-      <option value="'Montserrat', sans-serif" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
-      <option value="'Nunito', sans-serif" style="font-family: 'Nunito', sans-serif">Nunito (Rounded)</option>
-      <option value="'Lato', sans-serif" style="font-family: 'Lato', sans-serif">Lato</option>
-      <option value="'Oswald', sans-serif" style="font-family: 'Oswald', sans-serif">Oswald (Bold)</option>
-      <option value="'Cinzel', serif" style="font-family: 'Cinzel', serif">Cinzel (Classic)</option>
-      <option value="'Audiowide', cursive" style="font-family: 'Audiowide', cursive">Audiowide</option>
-      <option value="'Birthstone', cursive" style="font-family: 'Birthstone', cursive">Birthstone (Script)</option>
-    </select>
-    <button id="btn-add-text" class="tool-btn" title="Add New Text" style="background:#000; color:#fff; padding: 4px 10px; font-size: 11px; font-weight: 600;">+ Add</button>
-
-    <div class="divider-y"></div>
-    <input type="color" id="param-color" class="color-picker" value="#ff3366">
-    <input type="range" id="param-size" style="width:60px; margin-left:8px;" min="2" max="24" value="4">
-    <div class="divider-y"></div>
-    <button id="btn-undo" class="tool-btn btn-icon-label" title="Undo Last Mark">
-      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-      Undo
+    <button id="btn-add-text" class="tool-btn" title="Add New Text (8)" style="color: var(--text); font-weight: 600;">
+      <span style="font-size: 11px; margin-bottom: 2px;">+ Text</span>
+      <span class="tool-badge">8</span>
+    </button>
+    
+    <div class="divider-y" id="stroke-divider-left"></div>
+    <input type="color" id="param-color" class="color-picker" value="#000000" title="Stroke Color">
+    <input type="range" id="param-size" style="width:50px; margin-left:8px;" min="2" max="24" value="4" title="Stroke Size">
+    <div class="divider-y" id="stroke-divider-right"></div>
+    <button id="btn-undo" class="tool-btn" title="Undo Last Mark (9)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+      <span class="tool-badge">9</span>
     </button>
   </div>
 
   <div class="main-area">
+    <!-- Floating Export Actions in Top Right -->
+    <div class="export-floating-bar">
+      <select id="export-format-select" class="export-select-compact">
+        <option value="image/png">PNG</option>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/webp">WebP</option>
+      </select>
+      <div class="divider-y" style="height: 14px; margin: 0 2px;"></div>
+      <button class="copy-btn-compact" id="btn-copy" title="Copy to Clipboard">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-8 4h6m-6 4h6m-6 4h4"></path></svg>
+        Copy
+      </button>
+      <button class="export-btn-compact" id="btn-export">
+        Export
+      </button>
+    </div>
+
     <div class="canvas-wrapper">
       <canvas id="main-canvas"></canvas>
+    </div>
+    
+    <!-- Floating Shape Formatting Panel in Mid Right -->
+    <div id="floating-shape-panel" style="position: absolute; top: 100px; right: 24px; width: 260px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 30; display: none; flex-direction: column; overflow: hidden; transition: all 0.25s;">
+      <div style="padding: 12px 16px; background: var(--panel-bg); border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text);">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16v12H4z"></path></svg>
+        Shape Styling
+      </div>
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Border Color</span>
+            <input type="color" id="shape-stroke-color" class="color-picker" style="width: 100%; height: 38px; margin: 0; padding: 2px;" value="#000000">
+          </div>
+          <div id="shape-fill-container" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Fill Color</span>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input type="color" id="shape-fill-color" class="color-picker" style="flex: 1; height: 38px; margin: 0; padding: 2px;" value="#ffffff">
+              <button id="btn-shape-fill-transparent" title="Set Transparent" style="background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; width: 30px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text);">&#x2715;</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-group">
+          <div class="control-label" style="font-size: 11px;">
+            <span>Border Width</span>
+            <span class="control-value" id="val-shape-stroke-width">4px</span>
+          </div>
+          <input type="range" id="shape-stroke-width" min="1" max="24" value="4">
+        </div>
+        
+        <div class="control-group" id="shape-radius-container">
+          <div class="control-label" style="font-size: 11px;">
+            <span>Corner Radius</span>
+            <span class="control-value" id="val-shape-radius">0px</span>
+          </div>
+          <input type="range" id="shape-radius" min="0" max="100" value="0">
+        </div>
+      </div>
+    </div>
+    
+    <!-- Floating Expandable Layers Panel in Bottom Right -->
+    <div id="floating-layers-panel" style="position: absolute; bottom: 24px; right: 24px; width: 260px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 30; display: flex; flex-direction: column; overflow: hidden; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);">
+      <div id="layers-panel-header" style="padding: 12px 16px; background: var(--panel-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+        <span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text);">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          Layers (<span id="layers-count">0</span>)
+        </span>
+        <svg id="layers-toggle-arrow" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="transition: transform 0.2s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+      </div>
+      <div id="layers-panel-content" style="max-height: 250px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;">
+        <!-- Dynamic elements injected here -->
+      </div>
     </div>
   </div>
 
