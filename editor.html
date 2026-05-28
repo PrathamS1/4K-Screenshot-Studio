@@ -591,45 +591,39 @@
         
         <div class="control-group">
           <div class="control-label">
-            <span>Rotation</span>
-            <span class="control-value" id="val-customRotate">0°</span>
+            <span>Perspective</span>
+            <span class="control-value" id="val-customPerspective">1000px</span>
           </div>
-          <input type="range" id="param-customRotate" min="-180" max="180" value="0">
+          <input type="range" id="param-customPerspective" min="400" max="2000" step="50" value="1000">
         </div>
 
         <div class="control-group">
           <div class="control-label">
-            <span>Skew X</span>
-            <span class="control-value" id="val-customSkewX">0°</span>
+            <span>Rotate X</span>
+            <span class="control-value" id="val-customRotateX">0°</span>
           </div>
-          <input type="range" id="param-customSkewX" min="-60" max="60" value="0">
+          <input type="range" id="param-customRotateX" min="-90" max="90" value="0">
         </div>
 
         <div class="control-group">
           <div class="control-label">
-            <span>Skew Y</span>
-            <span class="control-value" id="val-customSkewY">0°</span>
+            <span>Rotate Y</span>
+            <span class="control-value" id="val-customRotateY">0°</span>
           </div>
-          <input type="range" id="param-customSkewY" min="-60" max="60" value="0">
-        </div>
-
-
-
-        <div class="control-group">
-          <div class="control-label">
-            <span>3D Extrusion Depth</span>
-            <span class="control-value" id="val-customDepth">0px</span>
-          </div>
-          <input type="range" id="param-customDepth" min="0" max="50" value="0">
+          <input type="range" id="param-customRotateY" min="-90" max="90" value="0">
         </div>
 
         <div class="control-group">
           <div class="control-label">
-            <span>Depth Direction</span>
-            <span class="control-value" id="val-customDepthAngle">135°</span>
+            <span>Rotate Z</span>
+            <span class="control-value" id="val-customRotateZ">0°</span>
           </div>
-          <input type="range" id="param-customDepthAngle" min="0" max="360" value="135">
+          <input type="range" id="param-customRotateZ" min="-90" max="90" value="0">
         </div>
+
+
+
+
 
         <div class="control-group">
           <div class="control-label">
@@ -750,7 +744,48 @@
           <span>Drop Shadow Intensity</span>
           <span class="control-value" id="val-shadow">40%</span>
         </div>
-        <input type="range" id="param-shadow" min="0" max="100" value="40">
+        <input type="range" id="param-shadow" min="0" max="200" value="40">
+      </div>
+
+      <!-- Shadow Style Sub-Settings (Always visible for all showcase transform layouts!) -->
+      <div id="custom-3d-shadow-settings-wrapper" style="display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: var(--panel-bg); margin-top: 4px;">
+        <div class="control-group">
+          <div class="control-label">Shadow Style</div>
+          <select id="param-customShadowType" class="select-input">
+            <option value="default">Default Shadow</option>
+            <option value="floating">Premium Floating</option>
+            <option value="soft">Soft Ambient</option>
+            <option value="sharp">Sharp Retro</option>
+            <option value="glow">Neon Glow</option>
+            <option value="none">No Shadow</option>
+          </select>
+        </div>
+
+        <div id="custom-shadow-controls" style="display: flex; flex-direction: column; gap: 14px; margin-top: 4px; border: 1px dashed var(--border); padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.01);">
+          <div class="control-group">
+            <div class="control-label">
+              <span>Shadow Offset X</span>
+              <span class="control-value" id="val-customShadowX">-30px</span>
+            </div>
+            <input type="range" id="param-customShadowX" min="-150" max="150" value="-30">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Shadow Offset Y</span>
+              <span class="control-value" id="val-customShadowY">40px</span>
+            </div>
+            <input type="range" id="param-customShadowY" min="-150" max="150" value="40">
+          </div>
+
+          <div class="control-group">
+            <div class="control-label">
+              <span>Shadow Blur</span>
+              <span class="control-value" id="val-customShadowBlur">70px</span>
+            </div>
+            <input type="range" id="param-customShadowBlur" min="0" max="250" value="70">
+          </div>
+        </div>
       </div>
 
 

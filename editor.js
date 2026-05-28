@@ -1,5 +1,5 @@
 const canvas = document.getElementById('main-canvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');
 let originalImage = null;
 let offscreenCanvas = document.createElement('canvas');
 let offscreenCtx = offscreenCanvas.getContext('2d');
@@ -45,11 +45,14 @@ let state = {
     color2: '#ffcc00'
   },
   custom3D: {
-    rotate: 0,
-    skewX: 0,
-    skewY: 0,
-    depth: 0,
-    depthAngle: 135,
+    perspective: 1000,
+    rotateX: 0,
+    rotateY: 0,
+    rotateZ: 0,
+    shadowType: 'default',
+    shadowX: -30,
+    shadowY: 40,
+    shadowBlur: 70,
     gloss: 0
   },
   exportFormat: 'image/png',
@@ -321,38 +324,93 @@ function initUI() {
       document.querySelectorAll('#transform-toggle .showcase-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.transform = btn.dataset.value;
-      document.getElementById('custom-3d-container').style.display = state.transform === 'custom' ? 'flex' : 'none';
+      const isCustom = state.transform === 'custom';
+      document.getElementById('custom-3d-container').style.display = isCustom ? 'flex' : 'none';
       render();
     }
   });
 
-  document.getElementById('param-customRotate').addEventListener('input', (e) => {
-    state.custom3D.rotate = parseInt(e.target.value);
-    document.getElementById('val-customRotate').textContent = e.target.value + '°';
+  document.getElementById('param-customPerspective').addEventListener('input', (e) => {
+    state.custom3D.perspective = parseInt(e.target.value);
+    document.getElementById('val-customPerspective').textContent = e.target.value + 'px';
     render();
   });
 
-  document.getElementById('param-customSkewX').addEventListener('input', (e) => {
-    state.custom3D.skewX = parseInt(e.target.value);
-    document.getElementById('val-customSkewX').textContent = e.target.value + '°';
+  document.getElementById('param-customRotateX').addEventListener('input', (e) => {
+    state.custom3D.rotateX = parseInt(e.target.value);
+    document.getElementById('val-customRotateX').textContent = e.target.value + '°';
     render();
   });
 
-  document.getElementById('param-customSkewY').addEventListener('input', (e) => {
-    state.custom3D.skewY = parseInt(e.target.value);
-    document.getElementById('val-customSkewY').textContent = e.target.value + '°';
+  document.getElementById('param-customRotateY').addEventListener('input', (e) => {
+    state.custom3D.rotateY = parseInt(e.target.value);
+    document.getElementById('val-customRotateY').textContent = e.target.value + '°';
     render();
   });
 
-  document.getElementById('param-customDepth').addEventListener('input', (e) => {
-    state.custom3D.depth = parseInt(e.target.value);
-    document.getElementById('val-customDepth').textContent = e.target.value + 'px';
+  document.getElementById('param-customRotateZ').addEventListener('input', (e) => {
+    state.custom3D.rotateZ = parseInt(e.target.value);
+    document.getElementById('val-customRotateZ').textContent = e.target.value + '°';
     render();
   });
 
-  document.getElementById('param-customDepthAngle').addEventListener('input', (e) => {
-    state.custom3D.depthAngle = parseInt(e.target.value);
-    document.getElementById('val-customDepthAngle').textContent = e.target.value + '°';
+  document.getElementById('param-customShadowType').addEventListener('change', (e) => {
+    state.custom3D.shadowType = e.target.value;
+    const shadowControls = document.getElementById('custom-shadow-controls');
+    if (shadowControls) {
+      shadowControls.style.display = e.target.value === 'none' ? 'none' : 'flex';
+    }
+    
+    // Smoothly snap custom shadow sliders to the preset default values
+    const preset = e.target.value;
+    if (preset === 'default') {
+      state.custom3D.shadowX = -10;
+      state.custom3D.shadowY = 15;
+      state.custom3D.shadowBlur = 30;
+    } else if (preset === 'floating') {
+      state.custom3D.shadowX = -30;
+      state.custom3D.shadowY = 40;
+      state.custom3D.shadowBlur = 70;
+    } else if (preset === 'soft') {
+      state.custom3D.shadowX = 0;
+      state.custom3D.shadowY = 30;
+      state.custom3D.shadowBlur = 100;
+    } else if (preset === 'sharp') {
+      state.custom3D.shadowX = -15;
+      state.custom3D.shadowY = 15;
+      state.custom3D.shadowBlur = 0;
+    } else if (preset === 'glow') {
+      state.custom3D.shadowX = 0;
+      state.custom3D.shadowY = 0;
+      state.custom3D.shadowBlur = 60;
+    }
+    
+    if (preset !== 'none') {
+      document.getElementById('param-customShadowX').value = state.custom3D.shadowX;
+      document.getElementById('param-customShadowY').value = state.custom3D.shadowY;
+      document.getElementById('param-customShadowBlur').value = state.custom3D.shadowBlur;
+      document.getElementById('val-customShadowX').textContent = state.custom3D.shadowX + 'px';
+      document.getElementById('val-customShadowY').textContent = state.custom3D.shadowY + 'px';
+      document.getElementById('val-customShadowBlur').textContent = state.custom3D.shadowBlur + 'px';
+    }
+    render();
+  });
+
+  document.getElementById('param-customShadowX').addEventListener('input', (e) => {
+    state.custom3D.shadowX = parseInt(e.target.value);
+    document.getElementById('val-customShadowX').textContent = e.target.value + 'px';
+    render();
+  });
+
+  document.getElementById('param-customShadowY').addEventListener('input', (e) => {
+    state.custom3D.shadowY = parseInt(e.target.value);
+    document.getElementById('val-customShadowY').textContent = e.target.value + 'px';
+    render();
+  });
+
+  document.getElementById('param-customShadowBlur').addEventListener('input', (e) => {
+    state.custom3D.shadowBlur = parseInt(e.target.value);
+    document.getElementById('val-customShadowBlur').textContent = e.target.value + 'px';
     render();
   });
 
@@ -363,27 +421,38 @@ function initUI() {
   });
 
   document.getElementById('btn-reset-custom-3d').addEventListener('click', () => {
-    state.custom3D.rotate = 0;
-    state.custom3D.skewX = 0;
-    state.custom3D.skewY = 0;
-    state.custom3D.depth = 0;
-    state.custom3D.depthAngle = 135;
+    state.custom3D.perspective = 1000;
+    state.custom3D.rotateX = 0;
+    state.custom3D.rotateY = 0;
+    state.custom3D.rotateZ = 0;
+    state.custom3D.shadowType = 'default';
+    state.custom3D.shadowX = -10;
+    state.custom3D.shadowY = 15;
+    state.custom3D.shadowBlur = 30;
     state.custom3D.gloss = 0;
 
-    // Update UI range inputs
-    document.getElementById('param-customRotate').value = 0;
-    document.getElementById('param-customSkewX').value = 0;
-    document.getElementById('param-customSkewY').value = 0;
-    document.getElementById('param-customDepth').value = 0;
-    document.getElementById('param-customDepthAngle').value = 135;
+    // Update UI range inputs and dropdowns
+    document.getElementById('param-customPerspective').value = 1000;
+    document.getElementById('param-customRotateX').value = 0;
+    document.getElementById('param-customRotateY').value = 0;
+    document.getElementById('param-customRotateZ').value = 0;
+    document.getElementById('param-customShadowType').value = 'default';
+    document.getElementById('param-customShadowX').value = -10;
+    document.getElementById('param-customShadowY').value = 15;
+    document.getElementById('param-customShadowBlur').value = 30;
     document.getElementById('param-customGloss').value = 0;
 
+    const shadowControls = document.getElementById('custom-shadow-controls');
+    if (shadowControls) shadowControls.style.display = 'flex';
+
     // Update UI value labels
-    document.getElementById('val-customRotate').textContent = '0°';
-    document.getElementById('val-customSkewX').textContent = '0°';
-    document.getElementById('val-customSkewY').textContent = '0°';
-    document.getElementById('val-customDepth').textContent = '0px';
-    document.getElementById('val-customDepthAngle').textContent = '135°';
+    document.getElementById('val-customPerspective').textContent = '1000px';
+    document.getElementById('val-customRotateX').textContent = '0°';
+    document.getElementById('val-customRotateY').textContent = '0°';
+    document.getElementById('val-customRotateZ').textContent = '0°';
+    document.getElementById('val-customShadowX').textContent = '-10px';
+    document.getElementById('val-customShadowY').textContent = '15px';
+    document.getElementById('val-customShadowBlur').textContent = '30px';
     document.getElementById('val-customGloss').textContent = '0%';
 
     render();
@@ -1414,10 +1483,6 @@ function getTransformMatrix() {
     else if (state.transform === 'stack-flat-tl') m = m.translate(-140, -140);
   } else if (state.transform.startsWith('stack-')) {
     m = m.scale(0.70, 0.70);
-  } else if (state.transform === 'custom') {
-    m = m.rotate(state.custom3D.rotate || 0)
-         .skewX(state.custom3D.skewX || 0)
-         .skewY(state.custom3D.skewY || 0);
   }
 
   const drawX = -(baseContentW / 2);
@@ -1639,6 +1704,112 @@ function drawAnnotations() {
   });
 }
 
+function project3DPoint(x, y, z, rx, ry, rz, D) {
+  const radX = rx * Math.PI / 180;
+  const radY = ry * Math.PI / 180;
+  const radZ = rz * Math.PI / 180;
+
+  // Rotate around X
+  const y1 = y * Math.cos(radX) - z * Math.sin(radX);
+  const z1 = y * Math.sin(radX) + z * Math.cos(radX);
+  const x1 = x;
+
+  // Rotate around Y
+  const x2 = x1 * Math.cos(radY) + z1 * Math.sin(radY);
+  const z2 = -x1 * Math.sin(radY) + z1 * Math.cos(radY);
+  const y2 = y1;
+
+  // Rotate around Z
+  const x3 = x2 * Math.cos(radZ) - y2 * Math.sin(radZ);
+  const y3 = x2 * Math.sin(radZ) + y2 * Math.cos(radZ);
+  const z3 = z2;
+
+  const denom = D - z3;
+  const scale = D / (denom <= 0 ? 0.001 : denom);
+  return {
+    x: x3 * scale,
+    y: y3 * scale,
+    z: z3
+  };
+}
+
+function drawPerspectiveQuad(drawCtx, img, W, H, rx, ry, rz, D, ctrX, ctrY) {
+  const cols = 16;
+  const rows = 16;
+  
+  const grid = [];
+  for (let c = 0; c <= cols; c++) {
+    grid[c] = [];
+    const u = c / cols;
+    const x_3d = -W / 2 + u * W;
+    for (let r = 0; r <= rows; r++) {
+      const v = r / rows;
+      const y_3d = -H / 2 + v * H;
+      const p_3d = project3DPoint(x_3d, y_3d, 0, rx, ry, rz, D);
+      grid[c][r] = { x: ctrX + p_3d.x, y: ctrY + p_3d.y };
+    }
+  }
+
+  const drawTriangle = (sAx, sAy, sBx, sBy, sCx, sCy, dAx, dAy, dBx, dBy, dCx, dCy) => {
+    drawCtx.save();
+    
+    // Smooth diagonal folding distortion using a tiny barycentric centroid expansion (1.5%) to close sub-pixel seams
+    const cx = (dAx + dBx + dCx) / 3;
+    const cy = (dAy + dBy + dCy) / 3;
+    const exp = 0.015;
+    
+    drawCtx.beginPath();
+    drawCtx.moveTo(dAx + (dAx - cx) * exp, dAy + (dAy - cy) * exp);
+    drawCtx.lineTo(dBx + (dBx - cx) * exp, dBy + (dBy - cy) * exp);
+    drawCtx.lineTo(dCx + (dCx - cx) * exp, dCy + (dCy - cy) * exp);
+    drawCtx.closePath();
+    drawCtx.clip();
+    
+    const den = (sAx - sCx) * (sBy - sCy) - (sBx - sCx) * (sAy - sCy);
+    if (Math.abs(den) < 1e-6) {
+      drawCtx.restore();
+      return;
+    }
+    
+    const a = ((dAx - dCx) * (sBy - sCy) - (dBx - dCx) * (sAy - sCy)) / den;
+    const b = ((dAy - dCy) * (sBy - sCy) - (dBy - dCy) * (sAy - sCy)) / den;
+    const c = ((dBx - dCx) * (sAx - sCx) - (dAx - dCx) * (sBx - sCx)) / den;
+    const d = ((dBy - dCy) * (sAx - sCx) - (dAy - dCy) * (sBx - sCx)) / den;
+    const e = dCx - a * sCx - c * sCy;
+    const f = dCy - b * sCx - d * sCy;
+    
+    drawCtx.transform(a, b, c, d, e, f);
+    drawCtx.drawImage(img, 0, 0);
+    drawCtx.restore();
+  };
+
+  for (let c = 0; c < cols; c++) {
+    const u0 = c / cols;
+    const u1 = (c + 1) / cols;
+    const sLx0 = u0 * W;
+    const sLx1 = u1 * W;
+    for (let r = 0; r < rows; r++) {
+      const v0 = r / rows;
+      const v1 = (r + 1) / rows;
+      const sLy0 = v0 * H;
+      const sLy1 = v1 * H;
+
+      const p00 = grid[c][r];
+      const p10 = grid[c+1][r];
+      const p11 = grid[c+1][r+1];
+      const p01 = grid[c][r+1];
+
+      // Triangle 1: Top-Left, Top-Right, Bottom-Left
+      drawTriangle(sLx0, sLy0, sLx1, sLy0, sLx0, sLy1, 
+                   p00.x, p00.y, p10.x, p10.y, p01.x, p01.y);
+
+      // Triangle 2: Top-Right, Bottom-Right, Bottom-Left
+      drawTriangle(sLx1, sLy0, sLx1, sLy1, sLx0, sLy1, 
+                   p10.x, p10.y, p11.x, p11.y, p01.x, p01.y);
+    }
+  }
+}
+
 function render(forExport = false) {
   if (!originalImage) return;
 
@@ -1697,41 +1868,47 @@ function render(forExport = false) {
 
     // Draw Shadow
     ctx.save();
-    if (state.shadow > 0) {
-      const shadowAlpha = state.shadow / 100;
+    if (state.shadow > 0 && state.custom3D.shadowType !== 'none') {
+      const shadowIntensity = state.shadow / 100;
+      const shadowType = state.custom3D.shadowType || 'floating';
+      const shadowX = state.custom3D.shadowX !== undefined ? state.custom3D.shadowX : -30;
+      const shadowY = state.custom3D.shadowY !== undefined ? state.custom3D.shadowY : 40;
+      const shadowBlur = state.custom3D.shadowBlur !== undefined ? state.custom3D.shadowBlur : 70;
 
-      if (state.transform === 'elevate') {
-        ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha * 0.4})`;
-        ctx.shadowBlur = 80;
-        ctx.shadowOffsetY = 50;
-      } else if (state.transform === 'custom') {
-        ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha})`;
-        ctx.shadowBlur = 30 + (state.shadow * 0.1);
-        ctx.shadowOffsetY = 15;
-        const skewCastX = -(state.custom3D.skewX || 0) * 0.5;
-        const skewCastY = -(state.custom3D.skewY || 0) * 0.5;
-        ctx.shadowOffsetX = skewCastX;
-        ctx.shadowOffsetY += skewCastY;
+      // Translate shadow relative to 3D slab depth if active in standard layouts
+      if (layerDepth > 0 && (isIso || isStand)) {
         ctx.translate(layerDepth * dirX, layerDepth * dirY);
-      } else if (isIso || isStand) {
-        ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha * 0.8})`;
-        ctx.shadowBlur = layerDepth > 0 ? 50 : 20;
-        ctx.shadowOffsetY = 40;
-        ctx.shadowOffsetX = dirX * 15;
-        ctx.translate(layerDepth * dirX, layerDepth * dirY);
-      } else if (isStack) {
-        ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha * 0.3})`;
-        ctx.shadowBlur = 40;
-        ctx.shadowOffsetY = 20;
-      } else {
-        ctx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha})`;
-        ctx.shadowBlur = 30;
-        ctx.shadowOffsetY = 15;
       }
 
-      ctx.fillStyle = '#000000';
-      roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
-      ctx.fill();
+      const drawShadowLayer = (dx, dy, blur, opacity, color = '#000000') => {
+        ctx.save();
+        ctx.shadowColor = color.startsWith('rgba') ? color : `rgba(0, 0, 0, ${opacity})`;
+        ctx.shadowBlur = blur;
+        ctx.shadowOffsetX = dx;
+        ctx.shadowOffsetY = dy;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+        ctx.fill();
+        ctx.restore();
+      };
+
+      if (shadowType === 'default') {
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.30 * shadowIntensity);
+      } else if (shadowType === 'floating') {
+        drawShadowLayer(shadowX * 0.16, shadowY * 0.12, shadowBlur * 0.20, 0.10 * shadowIntensity);
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.57, 0.20 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.25 * shadowIntensity);
+      } else if (shadowType === 'soft') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.50, 0.15 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.20 * shadowIntensity);
+      } else if (shadowType === 'sharp') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.05, 0.25 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur * 0.05, 0.15 * shadowIntensity);
+      } else if (shadowType === 'glow') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.40, 0.40 * shadowIntensity, `rgba(127, 0, 255, ${0.40 * shadowIntensity})`);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.30 * shadowIntensity, `rgba(0, 240, 255, ${0.30 * shadowIntensity})`);
+      }
     }
     ctx.restore();
 
@@ -1922,6 +2099,113 @@ function render(forExport = false) {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillRect(0, curDrawY, t.innerW, totalInnerH);
     ctx.restore();
+    ctx.restore();
+  } else if (state.transform === 'custom') {
+    // True 3D perspective rendering with multi-layered shadows and edge definitions
+    const W = t.innerW;
+    const H = totalInnerH;
+    const D = state.custom3D.perspective || 1000;
+    const rx = state.custom3D.rotateX || 0;
+    const ry = state.custom3D.rotateY || 0;
+    const rz = state.custom3D.rotateZ || 0;
+
+    // Card center in the flat transformed coordinates
+    const ctrX = W / 2;
+    const ctrY = (t.innerH - t.frameH) / 2;
+
+    // Project front face corners (z = 0) relative to card center
+    const p0_3d = project3DPoint(-W / 2, -H / 2, 0, rx, ry, rz, D);
+    const p1_3d = project3DPoint(W / 2, -H / 2, 0, rx, ry, rz, D);
+    const p2_3d = project3DPoint(W / 2, H / 2, 0, rx, ry, rz, D);
+    const p3_3d = project3DPoint(-W / 2, H / 2, 0, rx, ry, rz, D);
+
+    const p0 = { x: ctrX + p0_3d.x, y: ctrY + p0_3d.y };
+    const p1 = { x: ctrX + p1_3d.x, y: ctrY + p1_3d.y };
+    const p2 = { x: ctrX + p2_3d.x, y: ctrY + p2_3d.y };
+    const p3 = { x: ctrX + p3_3d.x, y: ctrY + p3_3d.y };
+
+    // Render the completely flat card layout onto a temporary offscreen canvas
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = W;
+    tempCanvas.height = H;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.imageSmoothingEnabled = true;
+    tempCtx.imageSmoothingQuality = 'high';
+
+    tempCtx.save();
+    // Shift top-left drawing starting coordinate to match tempCanvas bounds
+    tempCtx.translate(0, t.frameH);
+
+    // Temporarily redirect drawing functions to draw flat card on tempCanvas
+    const mainCtx = ctx;
+    ctx = tempCtx;
+
+    const prevShadow = state.shadow;
+    state.shadow = 0; // Bypasses duplicate flat shadows
+
+    drawScreenshotLayer(0, 0, 1, 0, 0);
+
+    state.shadow = prevShadow;
+    ctx = mainCtx; // Restore main context
+    tempCtx.restore();
+
+    // Draw multi-layered drop shadows (based on state.custom3D.shadowType)
+    const drawShadowLayer = (dx, dy, blur, opacity, color = '#000000') => {
+      ctx.save();
+      ctx.shadowColor = color.startsWith('rgba') ? color : `rgba(0, 0, 0, ${opacity})`;
+      ctx.shadowBlur = blur;
+      ctx.shadowOffsetX = dx;
+      ctx.shadowOffsetY = dy;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.lineTo(p3.x, p3.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+
+    if (state.shadow > 0 && state.custom3D.shadowType !== 'none') {
+      const shadowIntensity = state.shadow / 100;
+      const shadowType = state.custom3D.shadowType || 'floating';
+      const shadowX = state.custom3D.shadowX !== undefined ? state.custom3D.shadowX : -30;
+      const shadowY = state.custom3D.shadowY !== undefined ? state.custom3D.shadowY : 40;
+      const shadowBlur = state.custom3D.shadowBlur !== undefined ? state.custom3D.shadowBlur : 70;
+
+      if (shadowType === 'default') {
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.30 * shadowIntensity);
+      } else if (shadowType === 'floating') {
+        drawShadowLayer(shadowX * 0.16, shadowY * 0.12, shadowBlur * 0.20, 0.10 * shadowIntensity);
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.57, 0.20 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.25 * shadowIntensity);
+      } else if (shadowType === 'soft') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.50, 0.15 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.20 * shadowIntensity);
+      } else if (shadowType === 'sharp') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.05, 0.25 * shadowIntensity);
+        drawShadowLayer(shadowX, shadowY, shadowBlur * 0.05, 0.15 * shadowIntensity);
+      } else if (shadowType === 'glow') {
+        drawShadowLayer(shadowX * 0.50, shadowY * 0.50, shadowBlur * 0.40, 0.40 * shadowIntensity, `rgba(127, 0, 255, ${0.40 * shadowIntensity})`);
+        drawShadowLayer(shadowX, shadowY, shadowBlur, 0.30 * shadowIntensity, `rgba(0, 240, 255, ${0.30 * shadowIntensity})`);
+      }
+    }
+
+    // Render perspective-projected card onto main canvas using high-fidelity grid subdivision
+    drawPerspectiveQuad(ctx, tempCanvas, W, H, rx, ry, rz, D, ctrX, ctrY);
+
+    // Draw semi-transparent border edge highlight catches
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.20)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.stroke();
     ctx.restore();
   } else {
     drawScreenshotLayer(0, 0, 1, 0, baseDepth);
