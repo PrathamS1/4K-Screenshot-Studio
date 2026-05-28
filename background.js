@@ -186,6 +186,6 @@ function downloadImage(dataUrl, filename) {
 // Open onboarding page on extension install
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    chrome.tabs.create({ url: 'docs/index.html' });
+    chrome.tabs.create({ url: 'https://prathams1.github.io/4K-Screenshot-Studio/' });
   }
 });
