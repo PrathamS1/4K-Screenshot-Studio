@@ -104,9 +104,12 @@
             <ul class="list-disc pl-6 mt-4 space-y-2 text-accents">
               <li><strong><code>activeTab</code>:</strong> Allows the extension to capture the visible area of the specific, active tab you choose to execute it on. Our code cannot observe any background tabs.</li>
               <li><strong><code>scripting</code>:</strong> Required exclusively to temporarily inject the full-page scrolling mechanism. This ensures long-form web pages scroll and stitch natively to maintain 4K fidelity.</li>
+              <li><strong><code>debugger</code>:</strong> Used strictly to attach the Chrome DevTools Protocol to the active tab to execute emulation overrides (applying high-density 2.0x scale factors for true 4K desktop captures) and capture composite GPU layers natively via DevTools commands. The debugger is only active during the brief capture process and is instantly detached afterward.</li>
+              <li><strong><code>downloads</code>:</strong> Needed to automatically save your compiled, high-definition product showcases directly to your device's Downloads directory.</li>
+              <li><strong><code>storage</code> &amp; <code>unlimitedStorage</code>:</strong> Used to temporarily store the high-resolution capture buffer locally while transferring it to the Showcase Studio editor, and to save your custom 3D preset configurations.</li>
             </ul>
             <p class="mt-4 text-accents">
-              These permissions are utilized strictly on-demand, triggering only when you explicitly click the extension action icon.
+              These permissions are utilized strictly on-demand, triggering only when you explicitly interact with the extension.
             </p>
           </section>
 

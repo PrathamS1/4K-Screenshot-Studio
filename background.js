@@ -182,3 +182,10 @@ function downloadImage(dataUrl, filename) {
     chrome.tabs.create({ url: 'editor.html' });
   });
 }
+
+// Open onboarding page on extension install
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: 'docs/index.html' });
+  }
+});
