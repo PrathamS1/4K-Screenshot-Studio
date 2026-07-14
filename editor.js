@@ -30,6 +30,7 @@ let state = {
   scaleImage: 100,
   radius: 16,
   shadow: 40,
+  rotateImage: 0,
   color: '#000000',
   size: 4,
   fillColor: 'transparent',
@@ -490,13 +491,14 @@ function initUI() {
     render();
   });
 
-  ['padding', 'radius', 'shadow', 'offsetX', 'offsetY', 'scaleImage', 'textSize'].forEach(param => {
+  ['padding', 'radius', 'shadow', 'offsetX', 'offsetY', 'rotateImage', 'scaleImage', 'textSize'].forEach(param => {
     const input = document.getElementById(`param-${param}`);
     if (!input) return;
     input.addEventListener('input', (e) => {
       state[param] = parseInt(e.target.value);
       let suffix = 'px';
       if (param === 'shadow' || param === 'offsetX' || param === 'offsetY' || param === 'scaleImage') suffix = '%';
+      if (param === 'rotateImage') suffix = '°';
       if (param === 'textSize') suffix = 'px';
 
       const label = document.getElementById(`val-${param}`);
@@ -906,6 +908,42 @@ function initViewport() {
       viewport.lastX = e.clientX;
       viewport.lastY = e.clientY;
       updateViewport();
+    } else if (state.transform === 'interactive-tilt') {
+      if (state.interactiveTiltLocked) return;
+      const mainArea = document.querySelector('.main-area');
+      if (mainArea) {
+        const rect = mainArea.getBoundingClientRect();
+        const mx = e.clientX - rect.left - rect.width / 2;
+        const my = e.clientY - rect.top - rect.height / 2;
+        
+        const maxTilt = 16;
+        const degX = -(my / (rect.height / 2)) * maxTilt;
+        const degY = (mx / (rect.width / 2)) * maxTilt;
+        
+        state.interactiveTilt = {
+          rx: Math.min(Math.max(-maxTilt, degX), maxTilt),
+          ry: Math.min(Math.max(-maxTilt, degY), maxTilt)
+        };
+        render();
+      }
+    } else if (state.transform === 'split-slider') {
+      if (state.splitSliderLocked) return;
+      const mainArea = document.querySelector('.main-area');
+      if (mainArea) {
+        const rect = mainArea.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        let percentage = (mx / rect.width) * 100;
+        state.splitSliderReveal = Math.min(Math.max(0, percentage), 100);
+        render();
+      }
+    }
+  });
+
+  window.addEventListener('mouseleave', () => {
+    if (state.transform === 'interactive-tilt') {
+      if (state.interactiveTiltLocked) return;
+      state.interactiveTilt = { rx: 0, ry: 0 };
+      render();
     }
   });
 
@@ -913,6 +951,23 @@ function initViewport() {
     if (viewport.isPanning) {
       viewport.isPanning = false;
       if (!isSpaceDown) mainArea.classList.remove('panning');
+    }
+  });
+
+  mainArea.addEventListener('click', e => {
+    if (e.target.closest('.export-floating-bar') || 
+        e.target.closest('.top-toolbar') || 
+        e.target.closest('.zoom-controls') || 
+        e.target.closest('#floating-shape-panel')) {
+      return;
+    }
+    
+    if (state.transform === 'interactive-tilt') {
+      state.interactiveTiltLocked = !state.interactiveTiltLocked;
+      render();
+    } else if (state.transform === 'split-slider') {
+      state.splitSliderLocked = !state.splitSliderLocked;
+      render();
     }
   });
 
@@ -1024,21 +1079,41 @@ function applyBackgroundSelection() {
 }
 
 // --- Image Loading ---
-chrome.storage.local.get(['latestScreenshot'], (result) => {
-  if (result.latestScreenshot) {
-    originalImage = new Image();
-    originalImage.onload = () => {
-      offscreenCanvas.width = originalImage.width;
-      offscreenCanvas.height = originalImage.height;
-      offscreenCtx.imageSmoothingEnabled = true;
-      offscreenCtx.imageSmoothingQuality = 'high';
-      offscreenCtx.drawImage(originalImage, 0, 0);
-      saveDrawState();
-      render();
-    };
-    originalImage.src = result.latestScreenshot;
-  }
-});
+const loadDefaultPlaceholder = () => {
+  originalImage = new Image();
+  originalImage.onload = () => {
+    offscreenCanvas.width = originalImage.width;
+    offscreenCanvas.height = originalImage.height;
+    offscreenCtx.imageSmoothingEnabled = true;
+    offscreenCtx.imageSmoothingQuality = 'high';
+    offscreenCtx.drawImage(originalImage, 0, 0);
+    saveDrawState();
+    render();
+  };
+  originalImage.src = 'docs/studio.png';
+};
+
+if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+  chrome.storage.local.get(['latestScreenshot'], (result) => {
+    if (result && result.latestScreenshot) {
+      originalImage = new Image();
+      originalImage.onload = () => {
+        offscreenCanvas.width = originalImage.width;
+        offscreenCanvas.height = originalImage.height;
+        offscreenCtx.imageSmoothingEnabled = true;
+        offscreenCtx.imageSmoothingQuality = 'high';
+        offscreenCtx.drawImage(originalImage, 0, 0);
+        saveDrawState();
+        render();
+      };
+      originalImage.src = result.latestScreenshot;
+    } else {
+      loadDefaultPlaceholder();
+    }
+  });
+} else {
+  loadDefaultPlaceholder();
+}
 
 function saveDrawState() {
   drawHistory.push(offscreenCanvas.toDataURL());
@@ -1394,9 +1469,21 @@ function getTransformMatrix() {
   if (state.frame === 'mac' || state.frame === 'windows') frameH = 44;
   else if (state.frame === 'browser') frameH = 72;
   else if (state.frame === 'minimal') frameH = 32;
+  
   const innerW = offscreenCanvas.width;
   let innerH = offscreenCanvas.height;
-  if (state.viewportHeightMode === 'custom') {
+  
+  const isStack = state.transform.startsWith('stack-') || state.transform === 'exploded-layers' || state.transform === 'infinite-cascade';
+  if (isStack) {
+    if (state.viewportHeightMode === 'auto') {
+      // For stack layouts, each card should default to a standard landscape aspect ratio.
+      // If the screenshot is short, we use its full height.
+      const standardH = Math.round(innerW * 0.65);
+      innerH = Math.min(offscreenCanvas.height, standardH);
+    } else {
+      innerH = Math.min(offscreenCanvas.height, state.customViewportHeight || 800);
+    }
+  } else if (state.viewportHeightMode === 'custom') {
     innerH = Math.min(offscreenCanvas.height, state.customViewportHeight || 800);
   }
 
@@ -1406,8 +1493,37 @@ function getTransformMatrix() {
   let finalCanvasW, finalCanvasH;
   let contentScale = 1;
 
-  const baseContentW = innerW;
-  const baseContentH = innerH + frameH;
+  let spacingX = 0, spacingY = 0;
+  if (isStack) {
+    const totalH = innerH + frameH;
+    const Vx = innerW * 0.08; // Visual offset: 8% of width
+    const Vy = totalH * 0.08; // Visual offset: 8% of total height
+    
+    // Scale differences for the back card (0.88 scale)
+    const scaleDiffX = (1 - 0.88) * innerW;
+    const scaleDiffY = (1 - 0.88) * totalH;
+
+    if (state.transform === 'stack-flat-br') {
+      spacingX = -Vx;
+      spacingY = -Vy;
+    } else if (state.transform === 'stack-flat-bl') {
+      spacingX = Vx + scaleDiffX;
+      spacingY = -Vy;
+    } else if (state.transform === 'stack-flat-tr') {
+      spacingX = -Vx;
+      spacingY = Vy + scaleDiffY;
+    } else if (state.transform === 'stack-flat-tl') {
+      spacingX = Vx + scaleDiffX;
+      spacingY = Vy + scaleDiffY;
+    } else if (state.transform === 'stack-iso-left') { spacingX = -160; spacingY = -160; }
+    else if (state.transform === 'stack-iso-right') { spacingX = 160; spacingY = -160; }
+    else if (state.transform === 'stack-stand') { spacingX = -100; spacingY = -200; }
+    else if (state.transform === 'exploded-layers') { spacingX = -200; spacingY = -200; }
+    else if (state.transform === 'infinite-cascade') { spacingX = -240; spacingY = -240; }
+  }
+
+  const baseContentW = innerW + Math.abs(spacingX);
+  const baseContentH = innerH + frameH + Math.abs(spacingY);
   const rawW = baseContentW + pad * 2;
   const rawH = baseContentH + pad * 2;
 
@@ -1445,15 +1561,15 @@ function getTransformMatrix() {
 
   m = m.translate(cx + shiftX, cy + shiftY);
   m = m.scale(userScale, userScale);
+  if (state.rotateImage) {
+    m = m.rotate(state.rotateImage);
+  }
 
   if (state.platform !== 'default') {
     m = m.scale(contentScale, contentScale);
   }
 
-  if (state.transform === 'elevate') {
-    m = m.scale(0.92, 0.92);
-    m = m.translate(0, -20);
-  } else if (state.transform.includes('iso-left')) {
+  if (state.transform.includes('iso-left')) {
     m = m.scale(0.60, 0.60);
     m = m.multiply(new DOMMatrix([0.866, 0.5, -0.866, 0.5, 0, 0]));
   } else if (state.transform.includes('iso-right')) {
@@ -1466,31 +1582,45 @@ function getTransformMatrix() {
     m = m.scale(0.70, 0.70);
     const skew = state.transform.includes('right') ? 0.25 : -0.25;
     m = m.multiply(new DOMMatrix([0.866, skew, 0, 1, 0, 0]));
-  } else if (state.transform === 'fan-3d') {
-    m = m.scale(0.65, 0.65);
-    m = m.translate(0, 0);
   } else if (state.transform === 'curve-wide') {
     m = m.scale(0.85, 0.85);
   } else if (state.transform === 'reflect-3d') {
     m = m.scale(0.80, 0.80);
     m = m.translate(0, -100);
-  } else if (state.transform.startsWith('stack-flat-')) {
-    m = m.scale(0.70, 0.70);
-    // Center based on direction
-    if (state.transform === 'stack-flat-br') m = m.translate(140, 140);
-    else if (state.transform === 'stack-flat-bl') m = m.translate(-140, 140);
-    else if (state.transform === 'stack-flat-tr') m = m.translate(140, -140);
-    else if (state.transform === 'stack-flat-tl') m = m.translate(-140, -140);
   } else if (state.transform.startsWith('stack-')) {
     m = m.scale(0.70, 0.70);
+  } else if (state.transform === 'exploded-layers') {
+    m = m.scale(0.60, 0.60);
+    m = m.multiply(new DOMMatrix([0.866, 0.5, -0.866, 0.5, 0, 0]));
+  } else if (state.transform === 'infinite-cascade') {
+    m = m.scale(0.60, 0.60);
+    m = m.multiply(new DOMMatrix([0.866, 0.5, -0.866, 0.5, 0, 0]));
+  } else if (state.transform === 'interactive-tilt') {
+    m = m.scale(0.80, 0.80);
+  } else if (state.transform === 'glass-viewport') {
+    m = m.scale(0.80, 0.80);
+  } else if (state.transform === 'split-slider') {
+    m = m.scale(0.80, 0.80);
+  } else if (state.transform === 'neumorphic-extrusion') {
+    m = m.scale(0.80, 0.80);
   }
 
-  const drawX = -(baseContentW / 2);
-  const drawY = -(baseContentH / 2);
+  let drawX = -(innerW / 2) - (spacingX / 2);
+  let drawY = -((innerH + frameH) / 2) - (spacingY / 2) + frameH;
 
-  m = m.translate(drawX, drawY + frameH);
+  if (isStack) {
+    const minX = Math.min(0, spacingX);
+    const maxX = Math.max(innerW, spacingX + innerW * 0.88);
+    drawX = -(minX + maxX) / 2;
 
-  return { m, w: finalCanvasW, h: finalCanvasH, drawX, drawY, innerW: baseContentW, innerH: baseContentH - frameH, frameH, cx, cy, contentScale };
+    const minY = Math.min(-frameH, spacingY - frameH * 0.88);
+    const maxY = Math.max(innerH, spacingY + innerH * 0.88);
+    drawY = -(minY + maxY) / 2;
+  }
+
+  m = m.translate(drawX, drawY);
+
+  return { m, w: finalCanvasW, h: finalCanvasH, drawX, drawY, innerW, innerH, frameH, cx, cy, contentScale };
 }
 
 function drawText(filterDepth, forExport = false) {
@@ -1733,7 +1863,7 @@ function project3DPoint(x, y, z, rx, ry, rz, D) {
   };
 }
 
-function drawPerspectiveQuad(drawCtx, img, W, H, rx, ry, rz, D, ctrX, ctrY) {
+function drawPerspectiveQuad(drawCtx, img, W, H, rx, ry, rz, D, ctrX, ctrY, y3DOffset = 0) {
   const cols = 16;
   const rows = 16;
   
@@ -1745,7 +1875,7 @@ function drawPerspectiveQuad(drawCtx, img, W, H, rx, ry, rz, D, ctrX, ctrY) {
     for (let r = 0; r <= rows; r++) {
       const v = r / rows;
       const y_3d = -H / 2 + v * H;
-      const p_3d = project3DPoint(x_3d, y_3d, 0, rx, ry, rz, D);
+      const p_3d = project3DPoint(x_3d, y_3d + y3DOffset, 0, rx, ry, rz, D);
       grid[c][r] = { x: ctrX + p_3d.x, y: ctrY + p_3d.y };
     }
   }
@@ -1811,7 +1941,7 @@ function drawPerspectiveQuad(drawCtx, img, W, H, rx, ry, rz, D, ctrX, ctrY) {
 }
 
 function render(forExport = false) {
-  if (!originalImage) return;
+  if (!originalImage || !originalImage.complete || originalImage.naturalWidth === 0) return;
 
   const t = getTransformMatrix();
   canvas.width = t.w;
@@ -1840,10 +1970,29 @@ function render(forExport = false) {
 
   const isIso = state.transform.includes('iso');
   const isStand = state.transform.includes('stand');
-  const isStack = state.transform.startsWith('stack-');
+  const isStack = state.transform.startsWith('stack-') || state.transform === 'exploded-layers' || state.transform === 'infinite-cascade';
 
   let baseDepth = 0;
   let dirX = 0, dirY = 0;
+  let spacingX = 0, spacingY = 0;
+
+  if (isStack) {
+    const totalH = t.innerH + t.frameH;
+    const Vx = t.innerW * 0.08;
+    const Vy = totalH * 0.08;
+    const scaleDiffX = (1 - 0.88) * t.innerW;
+    const scaleDiffY = (1 - 0.88) * totalH;
+
+    if (state.transform === 'stack-flat-br') { spacingX = -Vx; spacingY = -Vy; }
+    else if (state.transform === 'stack-flat-bl') { spacingX = Vx + scaleDiffX; spacingY = -Vy; }
+    else if (state.transform === 'stack-flat-tr') { spacingX = -Vx; spacingY = Vy + scaleDiffY; }
+    else if (state.transform === 'stack-flat-tl') { spacingX = Vx + scaleDiffX; spacingY = Vy + scaleDiffY; }
+    else if (state.transform === 'stack-iso-left') { spacingX = -160; spacingY = -160; }
+    else if (state.transform === 'stack-iso-right') { spacingX = 160; spacingY = -160; }
+    else if (state.transform === 'stack-stand') { spacingX = -100; spacingY = -200; }
+    else if (state.transform === 'exploded-layers') { spacingX = -200; spacingY = -200; }
+    else if (state.transform === 'infinite-cascade') { spacingX = -240; spacingY = -240; }
+  }
 
   if (state.transform.includes('iso-left')) { baseDepth = 35; dirX = 1; dirY = 1; }
   else if (state.transform.includes('iso-right')) { baseDepth = 35; dirX = -1; dirY = 1; }
@@ -1866,14 +2015,25 @@ function render(forExport = false) {
     ctx.translate(tX, tY);
     ctx.scale(layerScale, layerScale);
 
+    const prevFilter = ctx.filter;
+    if (state.transform === 'infinite-cascade' && sectionIdx !== null && sectionIdx > 0) {
+      ctx.filter = `blur(${sectionIdx * 3.5}px)`;
+    }
+
     // Draw Shadow
     ctx.save();
     if (state.shadow > 0 && state.custom3D.shadowType !== 'none') {
       const shadowIntensity = state.shadow / 100;
       const shadowType = state.custom3D.shadowType || 'floating';
-      const shadowX = state.custom3D.shadowX !== undefined ? state.custom3D.shadowX : -30;
-      const shadowY = state.custom3D.shadowY !== undefined ? state.custom3D.shadowY : 40;
+      let shadowX = state.custom3D.shadowX !== undefined ? state.custom3D.shadowX : -30;
+      let shadowY = state.custom3D.shadowY !== undefined ? state.custom3D.shadowY : 40;
       const shadowBlur = state.custom3D.shadowBlur !== undefined ? state.custom3D.shadowBlur : 70;
+
+      if (isStack && (spacingX !== 0 || spacingY !== 0)) {
+        // Project shadow in the direction of the stack offset so it casts onto the card behind it
+        shadowX = Math.sign(spacingX) * Math.abs(shadowX);
+        shadowY = Math.sign(spacingY) * Math.abs(shadowY);
+      }
 
       // Translate shadow relative to 3D slab depth if active in standard layouts
       if (layerDepth > 0 && (isIso || isStand)) {
@@ -1888,7 +2048,17 @@ function render(forExport = false) {
         ctx.shadowOffsetY = dy;
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+        if (state.transform === 'exploded-layers') {
+          if (sectionIdx === 1) {
+            roundRect(ctx, 0, 0, t.innerW * 0.25, t.innerH, state.radius);
+          } else if (sectionIdx === 0) {
+            roundRect(ctx, t.innerW * 0.30, t.innerH * 0.18, t.innerW * 0.55, t.innerH * 0.65, state.radius);
+          } else {
+            roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+          }
+        } else {
+          roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+        }
         ctx.fill();
         ctx.restore();
       };
@@ -1935,11 +2105,21 @@ function render(forExport = false) {
 
     // Clip area for screenshot
     ctx.save();
-    roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+    if (state.transform === 'exploded-layers') {
+      if (sectionIdx === 1) {
+        roundRect(ctx, 0, 0, t.innerW * 0.25, t.innerH, state.radius);
+      } else if (sectionIdx === 0) {
+        roundRect(ctx, t.innerW * 0.30, t.innerH * 0.18, t.innerW * 0.55, t.innerH * 0.65, state.radius);
+      } else {
+        roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+      }
+    } else {
+      roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+    }
     ctx.clip();
 
     // Window Frame
-    if (state.frame !== 'none') {
+    if (state.frame !== 'none' && (state.transform !== 'exploded-layers' || sectionIdx === 2)) {
       const isMac = state.frame === 'mac';
       const isWin = state.frame === 'windows';
       const isBrowser = state.frame === 'browser';
@@ -1984,19 +2164,41 @@ function render(forExport = false) {
     }
 
     // Render Image (Dynamic Viewport Scroll & Height Slicing or Section Stacking)
-    const hasTallPage = offscreenCanvas.height > t.innerH * 1.1;
-    if (state.viewportHeightMode === 'custom' && sectionIdx === null) {
-      const maxScroll = offscreenCanvas.height - t.innerH;
-      const currentScrollY = maxScroll * (state.webpageScrollOffset / 100);
-      ctx.drawImage(offscreenCanvas, 0, currentScrollY, offscreenCanvas.width, t.innerH, 0, 0, t.innerW, t.innerH);
-    } else if (sectionIdx !== null && hasTallPage) {
+    if (state.transform === 'exploded-layers') {
+      if (sectionIdx === 2) {
+        ctx.drawImage(offscreenCanvas, 0, 0, t.innerW, t.innerH);
+      } else if (sectionIdx === 1) {
+        const cropW = offscreenCanvas.width * 0.25;
+        const targetW = t.innerW * 0.25;
+        ctx.drawImage(offscreenCanvas, 0, 0, cropW, offscreenCanvas.height, 0, 0, targetW, t.innerH);
+      } else if (sectionIdx === 0) {
+        const cropX = offscreenCanvas.width * 0.30;
+        const cropY = offscreenCanvas.height * 0.18;
+        const cropW = offscreenCanvas.width * 0.55;
+        const cropH = offscreenCanvas.height * 0.65;
+        
+        const targetX = t.innerW * 0.30;
+        const targetY = t.innerH * 0.18;
+        const targetW = t.innerW * 0.55;
+        const targetH = t.innerH * 0.65;
+        
+        ctx.drawImage(offscreenCanvas, cropX, cropY, cropW, cropH, targetX, targetY, targetW, targetH);
+      }
+    } else if (state.transform === 'infinite-cascade') {
+      ctx.drawImage(offscreenCanvas, 0, 0, t.innerW, t.innerH);
+    } else if (sectionIdx !== null) {
+      // Stacking sections: distribute the slices evenly across the height of the screenshot
       const sectionH = t.innerH;
-      const maxScrollY = offscreenCanvas.height - sectionH;
-      // Stacking sections with a subtle overlap so they look beautiful and continuous
-      const currentScrollY = Math.min(maxScrollY, sectionIdx * sectionH * 0.9);
-      ctx.drawImage(offscreenCanvas, 0, currentScrollY, offscreenCanvas.width, sectionH, 0, 0, t.innerW, t.innerH);
+      const maxScrollY = Math.max(0, offscreenCanvas.height - sectionH);
+      const currentScrollY = maxScrollY > 0 ? (sectionIdx / 2) * maxScrollY : 0;
+      ctx.drawImage(offscreenCanvas, 0, currentScrollY, offscreenCanvas.width, Math.min(offscreenCanvas.height - currentScrollY, sectionH), 0, 0, t.innerW, t.innerH);
+    } else if (state.viewportHeightMode === 'custom') {
+      const maxScroll = Math.max(0, offscreenCanvas.height - t.innerH);
+      const currentScrollY = maxScroll * (state.webpageScrollOffset / 100);
+      ctx.drawImage(offscreenCanvas, 0, currentScrollY, offscreenCanvas.width, Math.min(offscreenCanvas.height - currentScrollY, t.innerH), 0, 0, t.innerW, t.innerH);
     } else {
-      ctx.drawImage(offscreenCanvas, 0, 0);
+      // Auto Height (Default size)
+      ctx.drawImage(offscreenCanvas, 0, 0, t.innerW, t.innerH);
     }
 
     // Gloss Reflection Overlay
@@ -2027,47 +2229,164 @@ function render(forExport = false) {
     if (state.bgType !== 'transparent') {
       ctx.strokeStyle = 'rgba(0,0,0,0.1)';
       ctx.lineWidth = 1;
-      roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+      if (state.transform === 'exploded-layers') {
+        if (sectionIdx === 1) {
+          roundRect(ctx, 0, 0, t.innerW * 0.25, t.innerH, state.radius);
+        } else if (sectionIdx === 0) {
+          roundRect(ctx, t.innerW * 0.30, t.innerH * 0.18, t.innerW * 0.55, t.innerH * 0.65, state.radius);
+        } else {
+          roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+        }
+      } else {
+        roundRect(ctx, 0, curDrawY, t.innerW, totalInnerH, state.radius);
+      }
       ctx.stroke();
     }
 
     ctx.restore();
-    ctx.restore();
+    ctx.filter = prevFilter || 'none';
   };
 
-  if (isStack) {
-    let spacingX = 0, spacingY = 0;
-    if (state.transform === 'stack-flat-br') { spacingX = -200; spacingY = -200; }
-    else if (state.transform === 'stack-flat-bl') { spacingX = 200; spacingY = -200; }
-    else if (state.transform === 'stack-flat-tr') { spacingX = -200; spacingY = 200; }
-    else if (state.transform === 'stack-flat-tl') { spacingX = 200; spacingY = 200; }
-    else if (state.transform === 'stack-iso-left') { spacingX = -160; spacingY = -160; }
-    else if (state.transform === 'stack-iso-right') { spacingX = 160; spacingY = -160; }
-    else if (state.transform === 'stack-stand') { spacingX = -100; spacingY = -200; }
-    drawScreenshotLayer(spacingX, spacingY, 1, 0.45, 0, 2); // Section 3 (back)
-    drawScreenshotLayer(spacingX * 0.5, spacingY * 0.5, 1, 0.20, 0, 1); // Section 2 (mid)
-    drawScreenshotLayer(0, 0, 1, 0, 0, 0); // Section 1 (front)
-  } else if (state.transform === 'fan-3d') {
-    const sliceH = offscreenCanvas.height / 3;
-    const drawSlice = (idx, shiftX, shiftY, angle) => {
-      ctx.save();
-      ctx.translate(shiftX, shiftY);
-      ctx.scale(0.85, 0.85);
-      ctx.transform(1, angle, 0, 1, 0, 0);
-      ctx.save();
-      roundRect(ctx, 0, curDrawY + (idx * sliceH), t.innerW, sliceH, idx === 0 ? state.radius : 0);
-      ctx.clip();
-      ctx.drawImage(offscreenCanvas, 0, 0);
-      ctx.restore();
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      ctx.lineWidth = 2;
-      roundRect(ctx, 0, curDrawY + (idx * sliceH), t.innerW, sliceH, 0);
-      ctx.stroke();
-      ctx.restore();
-    };
-    drawSlice(2, 60, 20, -0.1);
-    drawSlice(1, 30, 10, -0.05);
-    drawSlice(0, 0, 0, 0);
+  if (state.transform === 'infinite-cascade') {
+    drawScreenshotLayer(spacingX, spacingY, 0.70, 0.70, baseDepth, 3); // Level 3 (backmost)
+    drawScreenshotLayer(spacingX * 0.66, spacingY * 0.66, 0.80, 0.45, baseDepth, 2); // Level 2
+    drawScreenshotLayer(spacingX * 0.33, spacingY * 0.33, 0.90, 0.20, baseDepth, 1); // Level 1
+    drawScreenshotLayer(0, 0, 1.0, 0, baseDepth, 0); // Foreground
+  } else if (isStack) {
+    drawScreenshotLayer(spacingX, spacingY, 0.88, 0.45, baseDepth, 2); // Section 3 (back)
+    drawScreenshotLayer(spacingX * 0.5, spacingY * 0.5, 0.94, 0.20, baseDepth, 1); // Section 2 (mid)
+    drawScreenshotLayer(0, 0, 1.0, 0, baseDepth, 0); // Section 1 (front)
+  } else if (state.transform === 'split-slider') {
+    const reveal = state.splitSliderReveal !== undefined ? state.splitSliderReveal : 50;
+    const splitX = (reveal / 100) * t.innerW;
+
+    // Draw grayscale base
+    ctx.save();
+    ctx.filter = 'grayscale(100%)';
+    drawScreenshotLayer(0, 0, 1.0, 0, 0);
+    ctx.restore();
+
+    // Draw colored reveal overlay
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, curDrawY, splitX, totalInnerH);
+    ctx.clip();
+    drawScreenshotLayer(0, 0, 1.0, 0, 0);
+    ctx.restore();
+
+    // Draw vertical drag handle
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 2;
+    
+    ctx.beginPath();
+    ctx.moveTo(splitX, curDrawY);
+    ctx.lineTo(splitX, curDrawY + totalInnerH);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'transparent';
+    ctx.beginPath();
+    ctx.arc(splitX, curDrawY + totalInnerH / 2, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.restore();
+  } else if (state.transform === 'neumorphic-extrusion') {
+    const W = t.innerW;
+    const H = totalInnerH;
+    const fPad = 24;
+
+    // Draw top-left highlight shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.88)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = -12;
+    ctx.shadowOffsetY = -12;
+    ctx.fillStyle = '#e0e8f0';
+    roundRect(ctx, -fPad, curDrawY - fPad, W + fPad * 2, H + fPad * 2, state.radius + 12);
+    ctx.fill();
+    ctx.restore();
+
+    // Draw bottom-right soft shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(160, 175, 192, 0.6)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 12;
+    ctx.shadowOffsetY = 12;
+    ctx.fillStyle = '#e0e8f0';
+    roundRect(ctx, -fPad, curDrawY - fPad, W + fPad * 2, H + fPad * 2, state.radius + 12);
+    ctx.fill();
+    ctx.restore();
+
+    // Draw bezel overlay stroke
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, -fPad, curDrawY - fPad, W + fPad * 2, H + fPad * 2, state.radius + 12);
+    ctx.stroke();
+    ctx.restore();
+
+    // Draw screenshot card flat
+    const prevShadow = state.shadow;
+    state.shadow = 0;
+    drawScreenshotLayer(0, 0, 1.0, 0, 0);
+    state.shadow = prevShadow;
+
+    // Bezel inset stroke
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 0, curDrawY, W, H, state.radius);
+    ctx.stroke();
+    ctx.restore();
+  } else if (state.transform === 'glass-viewport') {
+    const glassPadding = 48;
+    
+    // Draw frosted glass background blur
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    
+    ctx.beginPath();
+    const p0_gl = t.m.transformPoint({ x: -glassPadding, y: curDrawY - glassPadding });
+    const p1_gl = t.m.transformPoint({ x: t.innerW + glassPadding, y: curDrawY - glassPadding });
+    const p2_gl = t.m.transformPoint({ x: t.innerW + glassPadding, y: curDrawY + totalInnerH + glassPadding });
+    const p3_gl = t.m.transformPoint({ x: -glassPadding, y: curDrawY + totalInnerH + glassPadding });
+    
+    ctx.moveTo(p0_gl.x, p0_gl.y);
+    ctx.lineTo(p1_gl.x, p1_gl.y);
+    ctx.lineTo(p2_gl.x, p2_gl.y);
+    ctx.lineTo(p3_gl.x, p3_gl.y);
+    ctx.closePath();
+    ctx.clip();
+    
+    ctx.filter = 'blur(28px)';
+    drawBackground();
+    ctx.restore();
+    
+    // Draw glass frame border and specular details
+    ctx.save();
+    const r_gl = state.radius + 10;
+    ctx.shadowColor = `rgba(0, 0, 0, ${0.28 * (state.shadow / 100)})`;
+    ctx.shadowBlur = 60;
+    ctx.shadowOffsetY = 24;
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    roundRect(ctx, -glassPadding, curDrawY - glassPadding, t.innerW + glassPadding * 2, totalInnerH + glassPadding * 2, r_gl);
+    ctx.fill();
+    
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+    
+    // Draw mockup window flat on top of the glass viewport
+    drawScreenshotLayer(0, 0, 1.0, 0, baseDepth);
   } else if (state.transform === 'curve-wide') {
     const slices = 40;
     const sliceW = t.innerW / slices;
@@ -2100,14 +2419,14 @@ function render(forExport = false) {
     ctx.fillRect(0, curDrawY, t.innerW, totalInnerH);
     ctx.restore();
     ctx.restore();
-  } else if (state.transform === 'custom') {
+  } else if (state.transform === 'custom' || state.transform === 'interactive-tilt') {
     // True 3D perspective rendering with multi-layered shadows and edge definitions
     const W = t.innerW;
     const H = totalInnerH;
-    const D = state.custom3D.perspective || 1000;
-    const rx = state.custom3D.rotateX || 0;
-    const ry = state.custom3D.rotateY || 0;
-    const rz = state.custom3D.rotateZ || 0;
+    const D = state.transform === 'interactive-tilt' ? 1000 : (state.custom3D.perspective || 1000);
+    const rx = state.transform === 'interactive-tilt' ? (state.interactiveTilt?.rx || 0) : (state.custom3D.rotateX || 0);
+    const ry = state.transform === 'interactive-tilt' ? (state.interactiveTilt?.ry || 0) : (state.custom3D.rotateY || 0);
+    const rz = state.transform === 'interactive-tilt' ? 0 : (state.custom3D.rotateZ || 0);
 
     // Card center in the flat transformed coordinates
     const ctrX = W / 2;
@@ -2237,6 +2556,33 @@ function render(forExport = false) {
 
   if (!forExport) {
     renderLayersPanel();
+    
+    // Draw Interactive Tilt Lock/Unlock Badge on the canvas viewport
+    if (state.transform === 'interactive-tilt' || state.transform === 'split-slider') {
+      ctx.save();
+      // Draw in absolute screen coordinates
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 44px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      
+      // Text shadow for high readability on custom gradients/backgrounds
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+      
+      let text = '';
+      if (state.transform === 'interactive-tilt') {
+        text = state.interactiveTiltLocked ? '🔒 Tilt Locked (Click to unlock)' : '🔓 Tilt Unlocked (Click to lock)';
+      } else {
+        text = state.splitSliderLocked ? '🔒 Slider Locked (Click to unlock)' : '🔓 Slider Unlocked (Click to lock)';
+      }
+      ctx.fillText(text, canvas.width - 60, 40);
+      ctx.restore();
+    }
   }
 }
 

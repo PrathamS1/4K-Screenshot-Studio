@@ -63,22 +63,22 @@
     /* Showcase 3D Presets Grid */
     .showcase-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       margin-top: 8px;
     }
     
     .showcase-btn {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px;
+      border-radius: 8px;
+      padding: 6px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      height: 94px;
+      justify-content: center;
+      height: 52px;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
@@ -97,14 +97,12 @@
     }
     
     .showcase-btn .preview-area {
-      flex: 1;
       width: 100%;
-      height: 48px;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       perspective: 120px;
-      margin-bottom: 6px;
       pointer-events: none;
     }
     
@@ -113,7 +111,7 @@
       width: 42px;
       height: 28px;
       background: #ffffff;
-      border: 1px solid #d4d4d4;
+      border: 1px solid #94a3b8;
       border-radius: 3px;
       position: relative;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -131,11 +129,11 @@
     }
     
     /* Fake screen content elements */
-    .mini-screen-bar { height: 2px; width: 100%; background: #eaeaea; border-radius: 0.5px; pointer-events: none; }
+    .mini-screen-bar { height: 2px; width: 100%; background: #64748b; border-radius: 0.5px; pointer-events: none; }
     .mini-screen-body { flex: 1; display: flex; flex-direction: column; gap: 1px; justify-content: center; pointer-events: none; }
-    .mini-screen-line { height: 1.5px; background: #f3f3f3; width: 80%; border-radius: 0.5px; pointer-events: none; }
+    .mini-screen-line { height: 1.5px; background: #94a3b8; width: 80%; border-radius: 0.5px; pointer-events: none; }
     .mini-screen-line.short { width: 50%; pointer-events: none; }
-    .mini-screen-hero { height: 6px; background: #f0f0f0; border-radius: 0.5px; width: 100%; pointer-events: none; }
+    .mini-screen-hero { height: 6px; background: #3b82f6; border-radius: 0.5px; width: 100%; pointer-events: none; }
 
     /* Custom styles for each preset */
     .preview-flat .mini-screen { transform: none; }
@@ -146,28 +144,28 @@
     }
     
     .preview-iso-left .mini-screen { 
-      transform: rotateX(50deg) rotateZ(-40deg) scale(0.9);
-      box-shadow: -2px 3px 5px rgba(0,0,0,0.12);
-    }
-    
-    .preview-iso-right .mini-screen { 
       transform: rotateX(50deg) rotateZ(40deg) scale(0.9);
       box-shadow: 2px 3px 5px rgba(0,0,0,0.12);
     }
     
+    .preview-iso-right .mini-screen { 
+      transform: rotateX(50deg) rotateZ(-40deg) scale(0.9);
+      box-shadow: -2px 3px 5px rgba(0,0,0,0.12);
+    }
+    
     .preview-iso-top .mini-screen { 
-      transform: rotateX(55deg) rotateZ(-45deg) scale(0.8);
+      transform: rotateX(55deg) rotateZ(45deg) scale(0.8);
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
     .preview-stand-left .mini-screen { 
-      transform: rotateY(-25deg) scale(0.9);
-      box-shadow: -2px 2px 4px rgba(0,0,0,0.1);
+      transform: rotateY(25deg) scale(0.9);
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
     
     .preview-stand-right .mini-screen { 
-      transform: rotateY(25deg) scale(0.9);
-      box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      transform: rotateY(-25deg) scale(0.9);
+      box-shadow: -2px 2px 4px rgba(0,0,0,0.1);
     }
 
     /* Stacked screen variants */
@@ -176,7 +174,7 @@
       width: 32px;
       height: 22px;
       background: #ffffff;
-      border: 1px solid #d4d4d4;
+      border: 1px solid #94a3b8;
       border-radius: 2px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       transition: all 0.25s;
@@ -201,11 +199,11 @@
 
     .preview-stack-iso-left { perspective: 120px; }
     .preview-stack-iso-left .mini-screen-stack:first-child { 
-      transform: rotateX(50deg) rotateZ(-40deg) translate3d(-6px, -6px, 0) scale(0.8); 
+      transform: rotateX(50deg) rotateZ(40deg) translate3d(-6px, -6px, 0) scale(0.8); 
       z-index: 1; 
     }
     .preview-stack-iso-left .mini-screen-stack:last-child { 
-      transform: rotateX(50deg) rotateZ(-40deg) translate3d(2px, 2px, 0) scale(0.8); 
+      transform: rotateX(50deg) rotateZ(40deg) translate3d(2px, 2px, 0) scale(0.8); 
       z-index: 2; 
       background: #fafafa; 
     }
@@ -252,6 +250,131 @@
       height: 20px;
       color: var(--text-muted);
       pointer-events: none;
+    }
+    
+    /* Interactive Tilt Preview */
+    .preview-interactive-tilt {
+      perspective: 120px;
+    }
+    .preview-interactive-tilt .mini-screen {
+      transition: transform 0.2s ease-out;
+    }
+    .preview-interactive-tilt:hover .mini-screen {
+      transform: rotateX(15deg) rotateY(15deg) scale(0.95);
+    }
+    
+    /* Exploded Layers Preview */
+    .preview-exploded-layers .mini-screen-stack {
+      width: 28px;
+      height: 18px;
+      border: 1px dashed #94a3b8;
+    }
+    .preview-exploded-layers .mini-screen-stack:nth-child(1) {
+      transform: translate3d(-8px, -8px, 0) scale(0.75);
+      z-index: 1;
+      opacity: 0.45;
+    }
+    .preview-exploded-layers .mini-screen-stack:nth-child(2) {
+      transform: translate3d(-1px, -1px, 0) scale(0.85);
+      z-index: 2;
+      opacity: 0.75;
+      background: #fafafa;
+    }
+    .preview-exploded-layers .mini-screen-stack:nth-child(3) {
+      transform: translate3d(6px, 6px, 0) scale(0.95);
+      z-index: 3;
+      border-style: solid;
+      background: #ffffff;
+    }
+    
+    /* Frosted Viewport Preview */
+    .glass-outer-border {
+      border: 1px dashed #94a3b8;
+      border-radius: 4px;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Curved Screen Preview */
+    .preview-curved-screen .custom-icon {
+      width: 24px;
+      height: 20px;
+      color: #64748b;
+      pointer-events: none;
+    }
+    
+    /* Infinite Cascade Preview */
+    .preview-infinite-cascade .mini-screen-stack:nth-child(1) {
+      transform: translate3d(-10px, -10px, 0) scale(0.7);
+      z-index: 1;
+      opacity: 0.25;
+    }
+    .preview-infinite-cascade .mini-screen-stack:nth-child(2) {
+      transform: translate3d(-4px, -4px, 0) scale(0.85);
+      z-index: 2;
+      opacity: 0.6;
+    }
+    .preview-infinite-cascade .mini-screen-stack:nth-child(3) {
+      transform: translate3d(2px, 2px, 0) scale(1.0);
+      z-index: 3;
+    }
+    
+    /* Split Slider Preview */
+    .preview-split-slider {
+      position: relative;
+    }
+    .preview-split-slider .mini-screen-split-left {
+      position: absolute;
+      top: 13px;
+      left: 7px;
+      width: 19px;
+      height: 24px;
+      background: #fafafa;
+      border-radius: 3px 0 0 3px;
+      border: 1.5px solid #94a3b8;
+      border-right: none;
+    }
+    .preview-split-slider .mini-screen-split-right {
+      position: absolute;
+      top: 13px;
+      left: 26px;
+      width: 19px;
+      height: 24px;
+      background: #94a3b8;
+      opacity: 0.35;
+      border-radius: 0 3px 3px 0;
+      border: 1.5px solid #94a3b8;
+      border-left: none;
+    }
+    .preview-split-slider .split-slider-line {
+      position: absolute;
+      top: 11px;
+      left: 25px;
+      width: 2px;
+      height: 28px;
+      background: #64748b;
+      z-index: 5;
+    }
+    
+    /* Neumorphic Extrusion Preview */
+    .preview-neumorphic-extrusion .neumorphic-outer {
+      background: #e0e8f0;
+      border-radius: 6px;
+      padding: 3px;
+      box-shadow: 2px 2px 5px #becccccc, -2px -2px 5px #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-neumorphic-extrusion .mini-screen {
+      width: 24px;
+      height: 16px;
+      border-radius: 2px;
+      background: #e0e8f0;
+      border: 1px solid rgba(0,0,0,0.05);
     }
     
     .showcase-btn .label-text {
@@ -421,165 +544,188 @@
         <div class="showcase-grid" id="transform-toggle">
           
           <!-- Standard -->
-          <button class="showcase-btn active preview-flat" data-value="flat">
+          <button class="showcase-btn active preview-flat" data-value="flat" title="Standard">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Standard</span>
-          </button>
-          
-          <!-- Elevate -->
-          <button class="showcase-btn preview-elevate" data-value="elevate">
-            <div class="preview-area">
-              <div class="mini-screen">
-                <div class="mini-screen-bar"></div>
-                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
-              </div>
-            </div>
-            <span class="label-text">Elevate</span>
           </button>
           
           <!-- Iso Lay -->
-          <button class="showcase-btn preview-iso-left" data-value="iso-left">
+          <button class="showcase-btn preview-iso-left" data-value="iso-left" title="Iso Lay">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Iso Lay</span>
           </button>
           
           <!-- Iso Right -->
-          <button class="showcase-btn preview-iso-right" data-value="iso-right">
+          <button class="showcase-btn preview-iso-right" data-value="iso-right" title="Iso Right">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Iso Right</span>
           </button>
           
           <!-- Stand -->
-          <button class="showcase-btn preview-stand-left" data-value="stand-left">
+          <button class="showcase-btn preview-stand-left" data-value="stand-left" title="Stand">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Stand</span>
           </button>
           
           <!-- Stand R -->
-          <button class="showcase-btn preview-stand-right" data-value="stand-right">
+          <button class="showcase-btn preview-stand-right" data-value="stand-right" title="Stand R">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Stand R</span>
           </button>
           
           <!-- Stack BR -->
-          <button class="showcase-btn preview-stack-flat-br" data-value="stack-flat-br">
+          <button class="showcase-btn preview-stack-flat-br" data-value="stack-flat-br" title="Stack BR">
             <div class="preview-area">
               <div class="mini-screen-stack"></div>
               <div class="mini-screen-stack"></div>
             </div>
-            <span class="label-text">Stack BR</span>
           </button>
           
           <!-- Stack BL -->
-          <button class="showcase-btn preview-stack-flat-bl" data-value="stack-flat-bl">
+          <button class="showcase-btn preview-stack-flat-bl" data-value="stack-flat-bl" title="Stack BL">
             <div class="preview-area">
               <div class="mini-screen-stack"></div>
               <div class="mini-screen-stack"></div>
             </div>
-            <span class="label-text">Stack BL</span>
           </button>
           
           <!-- Stack TR -->
-          <button class="showcase-btn preview-stack-flat-tr" data-value="stack-flat-tr">
+          <button class="showcase-btn preview-stack-flat-tr" data-value="stack-flat-tr" title="Stack TR">
             <div class="preview-area">
               <div class="mini-screen-stack"></div>
               <div class="mini-screen-stack"></div>
             </div>
-            <span class="label-text">Stack TR</span>
           </button>
           
           <!-- Stack TL -->
-          <button class="showcase-btn preview-stack-flat-tl" data-value="stack-flat-tl">
+          <button class="showcase-btn preview-stack-flat-tl" data-value="stack-flat-tl" title="Stack TL">
             <div class="preview-area">
               <div class="mini-screen-stack"></div>
               <div class="mini-screen-stack"></div>
             </div>
-            <span class="label-text">Stack TL</span>
           </button>
           
           <!-- Stack Iso -->
-          <button class="showcase-btn preview-stack-iso-left" data-value="stack-iso-left">
+          <button class="showcase-btn preview-stack-iso-left" data-value="stack-iso-left" title="Stack Iso">
             <div class="preview-area">
               <div class="mini-screen-stack"></div>
               <div class="mini-screen-stack"></div>
             </div>
-            <span class="label-text">Stack Iso</span>
           </button>
           
           <!-- Mobile (stack-stand in canvas context) -->
-          <button class="showcase-btn preview-stack-stand" data-value="stack-stand">
+          <button class="showcase-btn preview-stack-stand" data-value="stack-stand" title="Mobile Stack">
             <div class="preview-area">
               <div class="mini-screen-stack" style="width:14px; height:24px; border-radius: 2px;"></div>
               <div class="mini-screen-stack" style="width:14px; height:24px; border-radius: 2px;"></div>
             </div>
-            <span class="label-text">Mobile Stack</span>
-          </button>
-          
-          <!-- Fan Fold -->
-          <button class="showcase-btn preview-fan-3d" data-value="fan-3d">
-            <div class="preview-area">
-              <div class="mini-screen-stack"></div>
-              <div class="mini-screen-stack"></div>
-              <div class="mini-screen-stack"></div>
-            </div>
-            <span class="label-text">Fan Fold</span>
           </button>
           
           <!-- Diamond -->
-          <button class="showcase-btn preview-iso-top" data-value="iso-top">
+          <button class="showcase-btn preview-iso-top" data-value="iso-top" title="Diamond">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Diamond</span>
           </button>
           
           <!-- Glass Floor -->
-          <button class="showcase-btn preview-reflect-3d" data-value="reflect-3d">
+          <button class="showcase-btn preview-reflect-3d" data-value="reflect-3d" title="Glass Floor">
             <div class="preview-area">
               <div class="mini-screen">
                 <div class="mini-screen-bar"></div>
                 <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
               </div>
             </div>
-            <span class="label-text">Glass Floor</span>
+          </button>
+          
+          <!-- Interactive Tilt -->
+          <button class="showcase-btn preview-interactive-tilt" data-value="interactive-tilt" title="Interactive Tilt">
+            <div class="preview-area">
+              <div class="mini-screen">
+                <div class="mini-screen-bar"></div>
+                <div class="mini-screen-body"><div class="mini-screen-hero"></div><div class="mini-screen-line"></div></div>
+              </div>
+            </div>
+          </button>
+          
+          <!-- Exploded Layers -->
+          <button class="showcase-btn preview-exploded-layers" data-value="exploded-layers" title="Exploded Layers">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+          </button>
+          
+          <!-- Frosted Viewport -->
+          <button class="showcase-btn preview-glass-viewport" data-value="glass-viewport" title="Frosted Viewport">
+            <div class="preview-area">
+              <div class="glass-outer-border">
+                <div class="mini-screen" style="width:30px; height:20px; border-radius: 2px;">
+                  <div class="mini-screen-bar" style="height:1.5px;"></div>
+                  <div class="mini-screen-body"><div class="mini-screen-hero" style="height:4px;"></div></div>
+                </div>
+              </div>
+            </div>
+          </button>
+          
+          <!-- Infinite Cascade -->
+          <button class="showcase-btn preview-infinite-cascade" data-value="infinite-cascade" title="Infinite Cascade">
+            <div class="preview-area">
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+              <div class="mini-screen-stack"></div>
+            </div>
+          </button>
+          
+          <!-- Split Slider -->
+          <button class="showcase-btn preview-split-slider" data-value="split-slider" title="Split Slider">
+            <div class="preview-area">
+              <div class="mini-screen-split-left"></div>
+              <div class="mini-screen-split-right"></div>
+              <div class="split-slider-line"></div>
+            </div>
+          </button>
+          
+          <!-- Neumorphic Extrusion -->
+          <button class="showcase-btn preview-neumorphic-extrusion" data-value="neumorphic-extrusion" title="Neumorphic Extrusion">
+            <div class="preview-area">
+              <div class="neumorphic-outer">
+                <div class="mini-screen"></div>
+              </div>
+            </div>
           </button>
           
           <!-- Custom 3D -->
-          <button class="showcase-btn preview-custom" data-value="custom">
+          <button class="showcase-btn preview-custom" data-value="custom" title="Custom 3D">
             <div class="preview-area">
               <div class="mini-screen">
                 <svg class="custom-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
               </div>
             </div>
-            <span class="label-text">Custom 3D</span>
           </button>
           
         </div>
@@ -713,6 +859,14 @@
           <span class="control-value" id="val-offsetY">0%</span>
         </div>
         <input type="range" id="param-offsetY" min="-100" max="100" value="0">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Rotation</span>
+          <span class="control-value" id="val-rotateImage">0°</span>
+        </div>
+        <input type="range" id="param-rotateImage" min="-180" max="180" value="0">
       </div>
 
       <div class="control-group">

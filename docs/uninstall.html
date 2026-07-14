@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>We're Sorry to See You Go — 4K Screenshot Studio</title>
+    <meta
+      name="description"
+      content="We're sorry to see you go. Help us improve 4K Screenshot Studio by sharing your feedback."
+    />
+    <link rel="icon" type="image/png" href="icon128.png" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+            colors: {
+              border: "#eaeaea",
+              accents: "#666666",
+              foreground: "#000000",
+              background: "#ffffff",
+              surface: "#fafafa",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        -webkit-font-smoothing: antialiased;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #eaeaea;
+      }
+      .glass-dark {
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #eaeaea;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.02),
+          0 2px 4px -1px rgba(0, 0, 0, 0.04);
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+      .gradient-text {
+        background: linear-gradient(to right, #111, #666);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .reason-option input:checked + .reason-box {
+        border-color: #000000;
+        background-color: #fcfcfc;
+      }
+      .reason-option input:checked + .reason-box span {
+        background-color: #000000;
+        border-color: #000000;
+        box-shadow: inset 0 0 0 3px #ffffff;
+      }
+
+      /* Scroll button floating keyframe animation */
+      @keyframes bounce-slow {
+        0%,
+        100% {
+          transform: translateY(-25%);
+          animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+        }
+        50% {
+          transform: none;
+          animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+        }
+      }
+      .animate-bounce-slow {
+        animation: bounce-slow 2s infinite;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-foreground font-sans selection:bg-black selection:text-white"
+  >
+    <!-- Navbar -->
+    <nav class="sticky top-0 w-full z-50 glass">
+      <div
+        class="flex justify-between items-center px-6 py-4 max-w-6xl mx-auto"
+      >
+        <a
+          href="index.html"
+          class="text-xl font-bold tracking-tight flex items-center gap-3"
+        >
+          <img
+            src="icon128.png"
+            alt="Logo"
+            class="w-8 h-8 rounded-lg shadow-sm"
+          />
+          <span>4K Studio</span>
+        </a>
+        <a
+          href="https://chromewebstore.google.com/detail/4k-screenshot-studio/amdiokhaegjhbkmjopjeijhhmbbjhifa"
+          target="_blank"
+          class="bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 transition-all flex items-center gap-2"
+        >
+          Add to Chrome
+        </a>
+      </div>
+    </nav>
+
+    <!-- SECTION 1: Full-Screen Hero Section -->
+    <section
+      class="relative h-screen w-full flex flex-col items-center justify-center text-center px-6 overflow-hidden"
+    >
+      <div class="absolute inset-0 p-5">
+        <img src="bg.webp" class="w-full rounded-2xl h-full object-cover" alt="" />
+        <div class="absolute inset-5 bg-black/45 rounded-2xl"></div>
+      </div>
+      <!-- Hero Content -->
+      <div class="relative z-10 max-w-4xl">
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-semibold"
+        >
+          Extension Uninstalled
+        </div>
+
+        <h1
+          class="font-extrabold text-5xl md:text-8xl text-white tracking-tighter leading-tight drop-shadow-sm"
+        >
+          We're sorry to 
+          <span class="text-white/85">see you go.</span>
+        </h1>
+
+        <p
+          class="text-white/95 text-lg mt-8 md:text-xl max-w-2xl mx-auto leading-relaxed font-medium drop-shadow-sm"
+        >
+          Thank you for trying 4K Screenshot Studio. If you have a moment,
+          please scroll down to let us know how we can improve.
+        </p>
+
+        <!-- Scroll down indicator -->
+        <div class="pt-12">
+          <button
+            id="scroll-down-btn"
+            class="w-12 h-12 rounded-full border border-white/20 hover:border-white/50 text-white flex items-center justify-center mx-auto transition-all hover:bg-white/5 animate-bounce-slow"
+          >
+            <span class="material-symbols-outlined">arrow_downward</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: Form Feedback Section -->
+    <section
+      id="feedback-section"
+      class="py-24 px-6 bg-background border-t border-border"
+    >
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-16">
+          <h2
+            class="font-extrabold text-4xl md:text-5xl tracking-tighter mb-4 text-black"
+          >
+            How can we make 
+            <span class="gradient-text">4K Studio better?</span>
+          </h2>
+          <p
+            class="text-accents text-base md:text-lg max-w-md mx-auto leading-relaxed"
+          >
+            Please share your feedback below. We read every response to build a
+            better experience.
+          </p>
+        </div>
+
+        <!-- Form Card -->
+        <div
+          id="form-wrapper"
+          class="card rounded-2xl p-8 md:p-12 max-w-2xl mx-auto"
+        >
+          <form id="uninstall-feedback-form" action="https://docs.google.com/forms/d/e/1FAIpQLSdK6JsTxtpzUuyrR7vwv-CTqpRvGDosKlcbawFjdl37rblQyA/formResponse" method="POST" target="hidden_iframe" class="space-y-8">
+            <!-- Question 1: Reason -->
+            <div>
+              <label class="block text-sm font-semibold mb-4 text-black">
+                Why did you uninstall the extension?
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="Too complicated to use"
+                    class="sr-only"
+                    required
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    Too complicated to use
+                  </div>
+                </label>
+
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="It was buggy / didn't work"
+                    class="sr-only"
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    It was buggy / didn't work
+                  </div>
+                </label>
+
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="Missing features I needed"
+                    class="sr-only"
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    Missing features I needed
+                  </div>
+                </label>
+
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="Found a better alternative"
+                    class="sr-only"
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    Found a better alternative
+                  </div>
+                </label>
+
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="Only needed it temporarily"
+                    class="sr-only"
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    Only needed it temporarily
+                  </div>
+                </label>
+
+                <label class="reason-option cursor-pointer">
+                  <input
+                    type="radio"
+                    name="entry.922119925"
+                    value="Other reason"
+                    class="sr-only"
+                  />
+                  <div
+                    class="reason-box flex items-center p-4 border border-border rounded-xl hover:bg-surface transition-all text-sm font-medium"
+                  >
+                    <span
+                      class="w-4 h-4 rounded-full border border-accents mr-3 inline-block shrink-0 transition-all"
+                    ></span>
+                    Other reason
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Question 2: Satisfaction -->
+            <div>
+              <label class="block text-sm font-semibold mb-4 text-black">
+                How would you rate your experience?
+              </label>
+              <div class="flex justify-between gap-2 max-w-md">
+                <button
+                  type="button"
+                  class="rating-btn flex-1 aspect-square sm:aspect-video rounded-xl border border-border text-sm font-bold hover:bg-surface hover:text-black transition-all flex items-center justify-center"
+                  data-value="1"
+                >
+                  1
+                </button>
+                <button
+                  type="button"
+                  class="rating-btn flex-1 aspect-square sm:aspect-video rounded-xl border border-border text-sm font-bold hover:bg-surface hover:text-black transition-all flex items-center justify-center"
+                  data-value="2"
+                >
+                  2
+                </button>
+                <button
+                  type="button"
+                  class="rating-btn flex-1 aspect-square sm:aspect-video rounded-xl border border-border text-sm font-bold hover:bg-surface hover:text-black transition-all flex items-center justify-center"
+                  data-value="3"
+                >
+                  3
+                </button>
+                <button
+                  type="button"
+                  class="rating-btn flex-1 aspect-square sm:aspect-video rounded-xl border border-border text-sm font-bold hover:bg-surface hover:text-black transition-all flex items-center justify-center"
+                  data-value="4"
+                >
+                  4
+                </button>
+                <button
+                  type="button"
+                  class="rating-btn flex-1 aspect-square sm:aspect-video rounded-xl border border-border text-sm font-bold hover:bg-surface hover:text-black transition-all flex items-center justify-center"
+                  data-value="5"
+                >
+                  5
+                </button>
+              </div>
+              <input
+                type="hidden"
+                name="entry.2134406972"
+                id="selected-rating"
+                value=""
+              />
+            </div>
+
+            <!-- Question 3: Comments -->
+            <div>
+              <label
+                for="comments"
+                class="block text-sm font-semibold mb-3 text-black"
+              >
+                What is the single thing we should improve?
+              </label>
+              <textarea
+                id="comments"
+                name="entry.357328202"
+                placeholder="Share your experience or request features here..."
+                class="w-full min-h-[120px] p-4 border border-border rounded-xl text-sm leading-relaxed focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+              ></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              class="w-full py-4 bg-black text-white rounded-xl font-semibold text-base hover:bg-gray-800 transition-all shadow-md active:scale-[0.99] flex items-center justify-center"
+            >
+              Submit Feedback
+            </button>
+          </form>
+
+          <div class="text-center mt-8 text-xs text-accents">
+            Changed your mind?
+            <a
+              href="https://chromewebstore.google.com/detail/4k-screenshot-studio/amdiokhaegjhbkmjopjeijhhmbbjhifa"
+              target="_blank"
+              class="text-black font-semibold hover:underline"
+              >Reinstall the extension</a
+            >
+          </div>
+        </div>
+
+        <!-- Success Message -->
+        <div
+          id="success-message"
+          class="hidden card rounded-2xl p-12 text-center max-w-md mx-auto space-y-6 animate-[fadeIn_0.4s_ease-out]"
+        >
+          <div
+            class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto border border-green-200"
+          >
+            <span class="material-symbols-outlined text-[32px]">check</span>
+          </div>
+          <h2 class="font-bold text-2xl text-black">Thank You!</h2>
+          <p class="text-accents text-sm leading-relaxed">
+            Your feedback has been submitted. We appreciate your honesty and
+            will work hard to address these items in the next updates.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Hidden iframe to capture form submission response silently without CORS errors -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(typeof submitted !== 'undefined' && submitted) { onFormSubmissionSuccess(); }"></iframe>
+
+    <!-- Footer -->
+    <footer class="w-full py-12 px-6 border-t border-border bg-surface">
+      <div
+        class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6"
+      >
+        <div class="flex items-center gap-3">
+          <img src="icon128.png" alt="Logo" class="w-6 h-6 opacity-80" />
+          <span class="font-bold text-sm">4K Studio</span>
+        </div>
+        <div class="flex gap-6 text-sm text-accents items-center">
+          <a
+            class="hover:text-black transition-colors flex items-center gap-1"
+            href="https://buymeacoffee.com/prathams1"
+            target="_blank"
+          >
+            <span class="material-symbols-outlined text-[18px]">coffee</span>
+          </a>
+          <a
+            class="hover:text-black transition-colors"
+            href="https://github.com/PrathamS1/4K-Screenshot-Studio"
+            target="_blank"
+            >GitHub</a
+          >
+          <a class="hover:text-black transition-colors" href="privacy.html"
+            >Privacy</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Smooth Scroll Button Action
+      document
+        .getElementById("scroll-down-btn")
+        .addEventListener("click", () => {
+          document
+            .getElementById("feedback-section")
+            .scrollIntoView({ behavior: "smooth" });
+        });
+
+      // Navbar transparency trigger on scroll
+      const navbar = document.getElementById("navbar");
+      const navBrand = document.getElementById("nav-brand");
+      const navCta = document.getElementById("nav-cta");
+
+      window.addEventListener("scroll", () => {
+        if (window.scrollY > window.innerHeight - 80) {
+          navbar.classList.remove("glass-dark");
+          navbar.classList.add("glass");
+          navBrand.classList.remove("text-white");
+          navBrand.classList.add("text-black");
+          navCta.classList.remove(
+            "bg-white",
+            "text-black",
+            "hover:bg-gray-100",
+          );
+          navCta.classList.add("bg-black", "text-white", "hover:bg-gray-800");
+        } else {
+          navbar.classList.remove("glass");
+          navbar.classList.add("glass-dark");
+          navBrand.classList.remove("text-black");
+          navBrand.classList.add("text-white");
+          navCta.classList.remove(
+            "bg-black",
+            "text-white",
+            "hover:bg-gray-800",
+          );
+          navCta.classList.add("bg-white", "text-black", "hover:bg-gray-100");
+        }
+      });
+
+      const ratingBtns = document.querySelectorAll(".rating-btn");
+      const ratingVal = document.getElementById("selected-rating");
+
+      ratingBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          ratingBtns.forEach((b) => {
+            b.classList.remove("bg-black", "text-white", "border-black");
+            b.classList.add("border-border");
+          });
+          btn.classList.add("bg-black", "text-white", "border-black");
+          btn.classList.remove("border-border");
+          ratingVal.value = btn.getAttribute("data-value");
+        });
+      });
+
+      // Form submission handling using hidden iframe
+      let submitted = false;
+      const form = document.getElementById("uninstall-feedback-form");
+      const formWrapper = document.getElementById("form-wrapper");
+      const successMsg = document.getElementById("success-message");
+
+      form.addEventListener("submit", () => {
+        submitted = true;
+      });
+
+      window.onFormSubmissionSuccess = function() {
+        formWrapper.style.display = "none";
+        successMsg.style.display = "block";
+      };
+    </script>
+  </body>
+</html>

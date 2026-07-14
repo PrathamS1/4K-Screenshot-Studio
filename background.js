@@ -183,9 +183,11 @@ function downloadImage(dataUrl, filename) {
   });
 }
 
-// Open onboarding page on extension install
+// Open onboarding page on extension install and configure uninstall feedback URL
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({ url: 'https://prathams1.github.io/4K-Screenshot-Studio/' });
   }
+  // Set the external uninstall URL (must be HTTPS)
+  chrome.runtime.setUninstallURL('https://prathams1.github.io/4K-Screenshot-Studio/uninstall.html');
 });

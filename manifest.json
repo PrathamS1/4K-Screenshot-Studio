@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "4K Screenshot Studio",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Capture stunning 4K screenshots and instantly turn them into professional, social-media-ready product showcases.",
   "icons": {
     "16": "icons/icon16.png",
