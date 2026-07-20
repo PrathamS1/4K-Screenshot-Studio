@@ -523,11 +523,18 @@
       const formWrapper = document.getElementById("form-wrapper");
       const successMsg = document.getElementById("success-message");
 
+      // Check if the user has already submitted the form previously
+      if (localStorage.getItem("4k_screenshotter_uninstall_submitted") === "true") {
+        formWrapper.style.display = "none";
+        successMsg.style.display = "block";
+      }
+
       form.addEventListener("submit", () => {
         submitted = true;
       });
 
       window.onFormSubmissionSuccess = function() {
+        localStorage.setItem("4k_screenshotter_uninstall_submitted", "true");
         formWrapper.style.display = "none";
         successMsg.style.display = "block";
       };
